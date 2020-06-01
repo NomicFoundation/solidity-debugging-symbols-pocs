@@ -15,7 +15,7 @@ async function sh(cmd) {
 
 async function compile(path) {
     return sh("lib/compiler/solcDebugSym --bin " + path).then( ({ stdout }) => {
-            const bytecode = stdout.split("\n")[3];
+            const bytecode = "0x" + stdout.split("\n")[3];
 
             return Promise.all([
                 fs.readFile("mappings.json", 'utf8'),
