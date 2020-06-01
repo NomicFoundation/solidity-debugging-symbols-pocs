@@ -25,14 +25,16 @@ function createTracer(web3) {
 }
 
 
-// @param tx is of the form { hash: <tx hash> }
-// @param symbols is a list of bytecode offsets for position calculations.
-// @returns a dictionary of keys and their raw values at the end of execution.
-async function retrieveKeysInTrace(tx, symbols, tracer_glob) {
-    const success = await tracer_glob.resolveTrace(tx);
+// @param tx is of the form { hash: <tx hash> } where the tx hash is the one whose trace should be observed.
+// @param symbols is a list of bytecode offsets for position calculations for a given map.
+// @param tracer is the object that retrieves traces and allows observation of individual steps in them.
+// @returns a dictionary of keys at the end of execution.
+// Later on we could add some information to the values in the returned dictionary if warranted.
+async function retrieveKeysInTrace(tx, symbols, tracer) {
+    const success = await tracer.resolveTrace(tx);
     if (!success) {
         console.warn("Tracing unsuccessful?");
-        return []
+        return [];
     }
 
     // The trace was successfully retrieved and analysed
@@ -43,14 +45,14 @@ async function retrieveKeysInTrace(tx, symbols, tracer_glob) {
             sha3_offsets[sha3_offset] = true;
         }
     }
-    const number_of_steps = await tracer_glob.getLength();
+    const number_of_steps = await tracer.getLength();
     const keys = {};
     for (let step = 0; step < number_of_steps; step++) {
-        const pc = await tracer_glob.getCurrentPC(step);
+        const pc = await tracer.getCurrentPC(step);
         if (sha3_offsets[pc]) {
             const uint256_size = 32n;
-            const stack = await tracer_glob.getStackAt(step);
-            const memory_blocks = await tracer_glob.getMemoryAt(step);
+            const stack = await tracer.getStackAt(step);
+            const memory_blocks = await tracer.getMemoryAt(step);
             const memory_block_size = 32n;
             console.log("Stack: " + util.inspect(stack));
             console.log("Memory in blocks: " + util.inspect(memory_blocks));
@@ -61,14 +63,6 @@ async function retrieveKeysInTrace(tx, symbols, tracer_glob) {
             const buffer_pointer = BigInt("0x" + stack[0]);
             const buffer_length = BigInt("0x" + stack[1]);
             const key_length = buffer_length - uint256_size;
-            // TODO: write the rest of the logic
-            // const memory_block_start_index = buffer_pointer / memory_block_size;
-            // const memory_block_start_offset = buffer_pointer % memory_block_size;
-            // const memory_block_end_index = ((buffer_pointer + key_length) / memory_block_size) +
-            //     ((buffer_pointer + key_length) % memory_block_size > 0n ? 1n : 0n)
-            // const memory_block_end_offset = ((buffer_pointer + key_length) / memory_block_size) +
-            //     ((buffer_pointer + key_length) % memory_block_size > 0n ? 1n : 0n)
-            // const memory_buffer_blocks = memory_blocks.slice();
             const key_array = [];
             for (let i = buffer_pointer * 2n; i < (buffer_pointer + key_length) * 2n; i++) {
                 key_array.push(memory[i]);
