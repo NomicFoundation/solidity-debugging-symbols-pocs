@@ -12,5 +12,9 @@
     "ganache-cli": "^6.9.1",
     "remix-lib": "^0.4.29",
     "web3": "^1.2.8"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^7.2.0"
   }
 }
