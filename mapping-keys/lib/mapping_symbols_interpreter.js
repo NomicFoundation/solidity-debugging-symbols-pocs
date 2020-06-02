@@ -35,6 +35,14 @@ function getMappingLabel(slot, symbols) {
     return name;
 }
 
+function readMemory(memory, pointer, size) {
+    const value_array = [];
+    for (let i = pointer * 2n; i < (pointer + size) * 2n; i++) {
+        value_array.push(memory[i]);
+    }
+    return "0x" + value_array.join("");
+}
+
 
 // @param tx is of the form { hash: <tx hash> } where the tx hash is the one whose trace should be observed.
 // @param symbols is a list of bytecode offsets for position calculations for a given map.
@@ -94,11 +102,30 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
     const slots = {};
     for (let step = 0; step < number_of_steps; step++) {
         const pc = await tracer.getCurrentPC(step);
+        const opcode = tracer.tracer.trace[step].op;
+        if (tracer.tracer.trace[step].op == "SHA3") {
+            console.log("Found SHA3! " + util.inspect(tracer.tracer.trace[step]));
+        }
         if (sha3_offsets[pc]) {
-            const memory = await tracer.getMemoryAt(step);
+            if (opcode != "SHA3") {
+                console.error("PC " + pc + " doesn't have a SHA3! It has a " + opcode + " instead!");
+            }
+            const memory_blocks = await tracer.getMemoryAt(step);
+            const stack = await tracer.getStackAt(step);
             const resultingSlot = "0x" + (await tracer.getStackAt(step + 1))[0];
-            const key = "0x" + memory[0];
-            const slot = "0x" + memory[1];
+            const uint256_size = 32n;
+
+            // All data is represented in big endian
+            const memory = memory_blocks.join("");
+            // Remember that, unlike the storage, the memory is byte addressable.
+            const buffer_pointer = BigInt("0x" + stack[0]);
+            const buffer_length = BigInt("0x" + stack[1]);
+            const key_length = buffer_length - uint256_size;
+            const slot_pointer = buffer_pointer + key_length;
+
+            const key = readMemory(memory, buffer_pointer, key_length);
+            const slot = readMemory(memory, slot_pointer, uint256_size);
+
             const label = getMappingLabel(slot, symbols);
 
             if(!slots[slot]) slots[slot] = {};
