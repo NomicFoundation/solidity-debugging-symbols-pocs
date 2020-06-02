@@ -14,9 +14,9 @@ async function sh(cmd) {
 }
 
 async function compile(path) {
-    return sh("lib/compiler/solcDebugSym --bin " + path).then( ({ stdout }) => {
+    return sh("lib/compiler/solcDebugSym --bin --storage-layout " + path).then( ({ stdout }) => {
             const bytecode = "0x" + stdout.split("\n")[3];
-
+            const storageLayout = JSON.parse(stdout.split("\n")[5]).storage;
             return Promise.all([
                 fs.readFile("mappings.json", 'utf8'),
                 fs.readFile("mappingsOffset.tsv", 'utf8'),
@@ -24,6 +24,7 @@ async function compile(path) {
                 fs.readFile("variablesOffset.tsv", 'utf8')
             ]).then( async ([mappingsJson, mappingsOffsetTsv, variablesJson, variablesOffsetTsv]) => {
 
+                //TODO Remove trailing commas
                 let regex = /,(?!\s*?[{\["'\w])/g;            // stack overflow magic
                 mappingsJson = mappingsJson.replace(regex, '');   // remove all trailing commas
                 variablesJson = variablesJson.replace(regex, ''); // remove all trailing commas
@@ -55,6 +56,9 @@ async function compile(path) {
                 const variables = JSON.parse(variablesJson).map(v => {
                     v.bytecodeOffset = variablesOffsets[v.id].bytecodeOffset;
                     v.deployedBytecodeOffset = variablesOffsets[v.id].deployedBytecodeOffset;
+                    //TODO change this for consistency
+                    v.label = v.name;
+                    v.name = undefined;
                     return v;
                 });
 
@@ -66,6 +70,7 @@ async function compile(path) {
                 ]);
 
                 return {
+                    storageLayout,
                     bytecode,
                     variables,
                     mappings
