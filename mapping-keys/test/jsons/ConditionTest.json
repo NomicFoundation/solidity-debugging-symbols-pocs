@@ -1,0 +1,21 @@
+{
+  "contractName": "MapCondition",
+  "tests": [
+    {
+      "method": "accessCondition",
+      "params": [true, 10],
+      "result": {
+        "trueMap": { "10":  true }
+      },
+      "description": "Fetch mapping with of a branching function (true)"
+    },
+    {
+      "method": "accessCondition",
+      "params": [false, 20],
+      "result": {
+        "falseMap": { "20": true }
+      },
+      "description": "Fetch mapping with of a branching function (false)"
+    }
+  ]
+}
