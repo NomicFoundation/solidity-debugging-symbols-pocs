@@ -24,11 +24,6 @@ async function compile(path) {
                 fs.readFile("variablesOffset.tsv", 'utf8')
             ]).then( async ([mappingsJson, mappingsOffsetTsv, variablesJson, variablesOffsetTsv]) => {
 
-                //TODO Remove trailing commas
-                let regex = /,(?!\s*?[{\["'\w])/g;            // stack overflow magic
-                mappingsJson = mappingsJson.replace(regex, '');   // remove all trailing commas
-                variablesJson = variablesJson.replace(regex, ''); // remove all trailing commas
-
                 const mappingsOffsets = mappingsOffsetTsv.split("\n")
                     .map(n => n.split("\t"))
                     .reduce((o, v) => {
@@ -56,9 +51,6 @@ async function compile(path) {
                 const variables = JSON.parse(variablesJson).map(v => {
                     v.bytecodeOffset = variablesOffsets[v.id].bytecodeOffset;
                     v.deployedBytecodeOffset = variablesOffsets[v.id].deployedBytecodeOffset;
-                    //TODO change this for consistency
-                    v.label = v.name;
-                    v.name = undefined;
                     return v;
                 });
 

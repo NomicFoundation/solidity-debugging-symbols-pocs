@@ -1,0 +1,29 @@
+{
+  "contractName": "MapLayoutExplorer",
+  "tests": [
+    {
+      "method": "accessTheMap",
+      "params": [1],
+      "result": {
+        "theMap": { "1":  true }
+      },
+      "description": "Fetch mapping with 1 index"
+    },
+    {
+      "method": "accessNestedMap",
+      "params": [1,2],
+      "result": {
+        "nestedMap": { "1":  { "2":  true } }
+      },
+      "description": "Fetch mapping with 2 index"
+    },
+    {
+      "method": "accessRedZoneMap",
+      "params": ["forty two"],
+      "result": {
+        "redZoneMap": { "forty two": true }
+      },
+      "description": "Fetch mapping with string index"
+    }
+  ]
+}
