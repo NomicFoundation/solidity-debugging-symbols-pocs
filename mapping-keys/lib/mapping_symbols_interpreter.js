@@ -151,7 +151,8 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
             slots[slot][decodedKey] = resultingSlot;
 
             if(label) {
-                mappingResult[label] = { [decodedKey]: resultingSlot }
+                if(!mappingResult[label]) mappingResult[label] = {};
+                mappingResult[label][decodedKey] = resultingSlot;
             }
         }
     }

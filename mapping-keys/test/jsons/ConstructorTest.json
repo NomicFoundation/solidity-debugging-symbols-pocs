@@ -1,0 +1,31 @@
+{
+  "contractName": "MapConstructor",
+  "constructorTests": [
+    {
+      "params": ["key", "value", "key2", "value2"],
+      "result": {
+        "map": { "key":  true, "key2":  true }
+      },
+      "description": "Add keys on constructor"
+    }
+  ],
+  "tests": [
+    {
+      "method": "moveValue",
+      "params": [ "key3" ],
+      "constructorParams": [
+        "myOriginalKey",
+        "value",
+        "key2",
+        "value2"
+      ],
+      "result": {
+        "map": {
+          "myOriginalKey": true,
+          "key3": true
+        }
+      },
+      "description": "Moving values of Contract with constructor initialization"
+    }
+  ]
+}
