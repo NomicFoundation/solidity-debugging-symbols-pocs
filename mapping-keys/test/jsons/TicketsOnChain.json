@@ -1,0 +1,22 @@
+{
+  "contractName": "TicketsOnChain",
+  "tests": [
+    {
+      "only": true,
+      "method": "createEvent",
+      "params": [ "100", "300", "metadata", "name", "description", 10],
+      "result": {
+        "ownerToEvent": {
+          "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true
+        },
+        "userMapping": {
+          "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true
+        },
+        "eventMapping": {
+          "0": true
+        }
+      },
+      "description": "Creating an Event"
+    }
+  ]
+}

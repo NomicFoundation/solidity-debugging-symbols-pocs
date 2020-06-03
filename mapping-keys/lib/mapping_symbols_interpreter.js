@@ -56,6 +56,7 @@ function getTypes(pc, symbols, deployedBytecode) {
 function toCanonicalType(type) {
     switch (type) {
         case 't_uint256': return 'uint256';
+        case 't_bytes6': return 'bytes6';
         case 't_string_memory_ptr': return 'string';
         case 't_address': return 'address';
         default: throw 'Unknown type ' + type

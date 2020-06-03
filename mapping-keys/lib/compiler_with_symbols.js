@@ -15,8 +15,12 @@ async function sh(cmd) {
 
 async function compile(path) {
     return sh("lib/compiler/solcDebugSym --bin --storage-layout " + path).then( ({ stdout }) => {
-            const bytecode = "0x" + stdout.split("\n")[3];
-            const storageLayout = JSON.parse(stdout.split("\n")[5]).storage;
+            //Hack for multiple contracts on same file
+            const contractName = (/([^/]+)(\.sol)$/).exec(path)[1];
+            const lines = stdout.split("\n");
+            const lineIndex = lines.findIndex((v) => v.includes(":"+contractName))
+            const bytecode = "0x" + lines[lineIndex + 2];
+            const storageLayout = JSON.parse(lines[lineIndex + 4]).storage;
             return Promise.all([
                 fs.readFile("mappings.json", 'utf8'),
                 fs.readFile("mappingsOffset.tsv", 'utf8'),
