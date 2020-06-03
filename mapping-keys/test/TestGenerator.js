@@ -62,6 +62,8 @@ testDefinitions.forEach( testDefinition => {
       it(unitTest.description, async () => {
         const params = unitTest.constructorParams || [];
         const contract = await Contract.new(...params);
+        unitTest.before && await Promise.all(unitTest.before.map( m => contract[m.method].sendTransaction(...m.params)));
+
         const result = await contract[unitTest.method].sendTransaction(...unitTest.params);
         const tx = {hash: result.tx, to: contract.address};
         const usedKeys = await retrieveKeysInTrace(tx, symbols, tracer);

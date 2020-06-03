@@ -4,10 +4,77 @@
     {
       "params": [],
       "result": {
-        "oracle_auth": { "key":  true, "key2":  true }
+        "oracle_auth": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076":  true }
       },
-      "description": "Add keys on constructor",
-      "skip": true
+      "description": "Add keys on constructor"
+    }
+  ],
+  "tests": [
+    {
+      "method": "is_doctor_or_pharmacist",
+      "params": [],
+      "result": {
+        "doctor_auth": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true },
+        "pharmacy_auth": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true }
+      },
+      "description": "Is doctor or Pharmacist query"
+    },
+    {
+      "method": "add_doctor",
+      "params": [42, 4321, "Juan", "Otorrino", "0xC257274276a4E539741Ca11b590B9447B26A8051", 1, 2],
+      "result": {
+        "doctor_id_mapping": { "42": true },
+        "doctor_address_mapping": { "0xC257274276a4E539741Ca11b590B9447B26A8051": true },
+        "doctor_auth": { "0xC257274276a4E539741Ca11b590B9447B26A8051": true }
+      },
+      "description": "Create a doctor"
+    },
+    {
+      "method": "add_pharmacy",
+      "params": [32, 3214, "0xcD1cF2368F5d25CCf9A4784cC1B751BFd15D9065"],
+      "result": {
+        "pharmacy_id_mapping": { "32": true },
+        "pharmacy_auth": { "0xcD1cF2368F5d25CCf9A4784cC1B751BFd15D9065": true },
+        "pharmacy_address_mapping": { "0xcD1cF2368F5d25CCf9A4784cC1B751BFd15D9065": true }
+      },
+      "description": "Create a pharmacy"
+    },
+    {
+      "method": "add_admin",
+      "params": [1337, "0x384D2651642984BbF83BdBDCEFa5455055EFcb5A"],
+      "result": {
+        "doctor_id_mapping": { "1337": true },
+        "admin_id_mapping": { "1337": true },
+        "admin_auth": { "0x384D2651642984BbF83BdBDCEFa5455055EFcb5A": true }
+      },
+      "description": "Create an admin"
+    },
+    {
+      "method": "lookup_patient",
+      "params": [28],
+      "result": {
+        "patient_aadhaar_mapping": { "28": true }
+      },
+      "description": "Create an admin"
+    },
+    {
+      "before": [
+        {
+          "method": "add_patient",
+          "params": [10, "Juan", "2-2-2020", 70, "Male", "None"]
+        },{
+          "method": "add_prescription",
+          "params": [10, "Lupus", "Cough", "Antibiotics", "2-2-2020:11:59"]
+        }
+      ],
+      "method": "last_prescription",
+      "params": [10],
+      "result": {
+        "patient_aadhaar_mapping": { "10":  true},
+        "prescription_id_mapping": { "1":  true }
+      },
+      "description": "Fetch last prescription",
+      "only": true
     }
   ]
 }

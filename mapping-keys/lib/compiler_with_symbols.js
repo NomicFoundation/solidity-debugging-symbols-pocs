@@ -69,9 +69,7 @@ async function compile(path) {
                 };
             })
 
-        }).catch( e =>
-            console.error(`Failed to compile ${path}\n${e}`)
-        )
+        })
 }
 
 module.exports = {
