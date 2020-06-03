@@ -6,7 +6,7 @@
       "result": {
         "oracle_auth": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076":  true }
       },
-      "description": "Add keys on constructor"
+      "description": "Add msg.sender as oracle on constructor"
     }
   ],
   "tests": [
@@ -50,12 +50,20 @@
       "description": "Create an admin"
     },
     {
+      "method": "add_patient",
+      "params": [10, "Juan", "2-2-2020", 70, "Male", "None"],
+      "result": {
+        "patient_aadhaar_mapping": { "10": true }
+      },
+      "description": "Create a patient"
+    },
+    {
       "method": "lookup_patient",
       "params": [28],
       "result": {
         "patient_aadhaar_mapping": { "28": true }
       },
-      "description": "Create an admin"
+      "description": "Fetch a patient"
     },
     {
       "before": [
@@ -73,8 +81,48 @@
         "patient_aadhaar_mapping": { "10":  true},
         "prescription_id_mapping": { "1":  true }
       },
-      "description": "Fetch last prescription",
-      "only": true
+      "description": "Fetch last prescription"
+    },
+    {
+      "before": [
+        {
+          "method": "add_patient",
+          "params": [10, "Juan", "2-2-2020", 70, "Male", "None"]
+        },{
+          "method": "add_prescription",
+          "params": [10, "Lupus", "Cough", "Antibiotics", "2-2-2020:11:59"]
+        },{
+          "method": "add_prescription",
+          "params": [10, "Lupus", "Cough", "Antibiotics", "2-2-2020:11:59"]
+        },{
+          "method": "add_prescription",
+          "params": [10, "Lupus", "Cough", "Antibiotics", "2-2-2020:11:59"]
+        }
+      ],
+      "method": "medical_history",
+      "params": [10],
+      "result": {
+        "patient_aadhaar_mapping": { "10":  true},
+        "prescription_id_mapping": { "1":  true, "2": true, "3": true }
+      },
+      "description": "Fetch medical history"
+    },
+    {
+      "before": [
+        {
+          "method": "request_adding_doctor",
+          "params": [42, 4321, "Juan", "Otorrino", "0xC257274276a4E539741Ca11b590B9447B26A8051"]
+        }
+      ],
+      "method": "give_consent",
+      "params": [42],
+      "result": {
+        "pending_doc_id_mapping": { "42":  true},
+        "doctor_id_mapping": { "42":  true },
+        "doctor_address_mapping": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076":  true },
+        "doctor_auth": { "0xC257274276a4E539741Ca11b590B9447B26A8051":  true }
+      },
+      "description": "Approve doctor request"
     }
   ]
 }
