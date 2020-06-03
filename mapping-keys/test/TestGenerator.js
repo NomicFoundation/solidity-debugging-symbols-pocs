@@ -16,8 +16,24 @@ const assertHasExactKeys = (result, target) => {
 };
 
 const filenames = fs.readdirSync("test/jsons");
-filenames.forEach(file => {
-  const testDefinition = require(`./jsons/${file}`);
+let testDefinitions = filenames.map(file => require(`./jsons/${file}`));
+let hasOnly = false;
+const onlys = testDefinitions.map(td => {
+  const ans = {
+    contractName: td.contractName,
+    constructorTests: td.constructorTests? td.constructorTests.filter(t => t.only) : [],
+    tests:  td.tests? td.tests.filter(t => t.only): [],
+  };
+
+  hasOnly = hasOnly || ans.constructorTests.length > 0 || ans.tests.length > 0;
+  return ans
+});
+
+if(hasOnly) {
+  testDefinitions = onlys;
+}
+
+testDefinitions.forEach( testDefinition => {
   contract(testDefinition.contractName, accounts => {
     let tracer, symbols, Contract;
 
@@ -29,6 +45,7 @@ filenames.forEach(file => {
     });
 
     testDefinition.constructorTests && testDefinition.constructorTests.map(unitTest => {
+      if(unitTest.skip) return;
 
       it(unitTest.description, async() => {
         const contract = await Contract.new(...unitTest.params);
@@ -40,6 +57,7 @@ filenames.forEach(file => {
     });
 
     testDefinition.tests && testDefinition.tests.map(unitTest => {
+      if(unitTest.skip) return;
 
       it(unitTest.description, async () => {
         const params = unitTest.constructorParams || [];

@@ -57,6 +57,7 @@ function toCanonicalType(type) {
     switch (type) {
         case 't_uint256': return 'uint256';
         case 't_string_memory_ptr': return 'string';
+        case 't_address': return 'address';
         default: throw 'Unknown type ' + type
     }
 }
@@ -119,7 +120,6 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
     const slots = {};
     for (let step = 0; step < number_of_steps; step++) {
         const pc = await tracer.getCurrentPC(step);
-        const opcode = tracer.tracer.trace[step].op;
         if (sha3_offsets[pc]) {
             const memory_blocks = await tracer.getMemoryAt(step);
             const stack = await tracer.getStackAt(step);

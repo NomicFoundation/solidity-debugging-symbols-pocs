@@ -1,0 +1,13 @@
+{
+  "contractName": "MedChain",
+  "constructorTests": [
+    {
+      "params": [],
+      "result": {
+        "oracle_auth": { "key":  true, "key2":  true }
+      },
+      "description": "Add keys on constructor",
+      "skip": true
+    }
+  ]
+}
