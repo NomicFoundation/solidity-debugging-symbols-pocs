@@ -1,0 +1,142 @@
+{
+  "contractName": "MultiSigWallet",
+  "constructorTests": [
+    {
+      "params": [],
+      "result": {
+        "signersMapping": {
+          "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1":  true,
+          "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0":  true,
+          "0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b":  true,
+          "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076":  true
+        }
+      },
+      "description": "Add signers on constructor"
+    }
+  ],
+  "tests": [
+    {
+      "method": "pay",
+      "params" : [],
+      "value": 10,
+      "result": {
+        "contributorsMapping": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076":  true}
+      },
+      "description": "Pay To Contract"
+    },
+    {
+      "before": [
+        {
+          "method": "pay",
+          "from": "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a",
+          "params" : [],
+          "value": 10
+        },
+        {
+          "method": "endContributionPeriod",
+          "from": "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076",
+          "params" : []
+        }
+      ],
+      "method": "submitProposal",
+      "from": "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a",
+      "params" : [1],
+      "result": {
+        "signersMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true},
+        "submittedProposalMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true}
+      },
+      "description": "Submit a proposal"
+    },
+    {
+      "before": [
+        {
+          "method": "pay",
+          "from": "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a",
+          "params" : [],
+          "value": 10
+        },
+        {
+          "method": "endContributionPeriod",
+          "from": "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076",
+          "params" : []
+        }
+      ,
+        {
+          "method": "submitProposal",
+          "from": "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a",
+          "params" : [1]
+        }
+      ],
+      "method": "approve",
+      "from": "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076",
+      "params" : ["0xdB899E55b8E7476c93Ba86566e35485a0CEC847a"],
+      "result": {
+        "individualVotesMapping": {
+          "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  {
+            "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true
+          }
+        },
+        "signerVoteMapping": {
+          "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  {
+            "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true
+          }
+        },
+        "signersMapping": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076":  true},
+        "submittedProposalMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true},
+        "voteCountMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true},
+        "approveVotesMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true}
+      },
+      "description": "Submit a proposal"
+    },
+    {
+      "before": [
+        {
+          "method": "addSigner",
+          "from": "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076",
+          "params" : ["0x30860052086031Bf448897D4A1F5eC39f986333A"]
+        },
+        {
+          "method": "pay",
+          "from": "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a",
+          "params" : [],
+          "value": 10
+        },
+        {
+          "method": "endContributionPeriod",
+          "from": "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076",
+          "params" : []
+        },
+        {
+          "method": "submitProposal",
+          "from": "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a",
+          "params" : [100]
+        },{
+          "method": "approve",
+          "from": "0x30860052086031Bf448897D4A1F5eC39f986333A",
+          "params" : ["0xdB899E55b8E7476c93Ba86566e35485a0CEC847a"]
+        }
+      ],
+      "method": "approve",
+      "from": "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076",
+      "params" : ["0xdB899E55b8E7476c93Ba86566e35485a0CEC847a"],
+      "result": {
+        "individualVotesMapping": {
+          "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  {
+            "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true
+          }
+        },
+        "signerVoteMapping": {
+          "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  {
+            "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true
+          }
+        },
+        "signersMapping": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076":  true},
+        "submittedProposalMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true},
+        "voteCountMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true},
+        "approveVotesMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true},
+        "proposalApprovedMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true}
+      },
+      "description": "Submit a proposal"
+    }
+  ]
+}
