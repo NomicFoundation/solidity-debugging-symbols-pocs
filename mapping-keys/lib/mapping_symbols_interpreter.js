@@ -101,6 +101,7 @@ function toCanonicalType(type) {
         case 'uint256':
         case 't_uint256':
             return 'uint256';
+        case 'bytes6':
         case 't_bytes6':
             return 'bytes6';
         case 'string':
@@ -290,7 +291,7 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
                         thisMapping = createMappingInfo(valueTypename, valueType);
                         parentMapping.nestedMaps[parentReference.key] = thisMapping;
                     } else {
-                        thisMapping = parentMapping.nestedMaps[key];
+                        thisMapping = parentMapping.nestedMaps[parentReference.key];
                     }
                 }
                 populateGeneratedSlotsWithMappingParentInformation(thisMapping, mappingParent, resultingSlot, valueTypename, decodedKey);
