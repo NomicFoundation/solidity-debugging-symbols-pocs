@@ -7,7 +7,7 @@
       "result": {
         "theMap": { "1":  true }
       },
-      "description": "Fetch mapping with 1 index"
+      "description": "Fetch mapping with 1 key"
     },
     {
       "method": "accessNestedMap",
@@ -15,7 +15,7 @@
       "result": {
         "nestedMap": { "1":  { "2":  true } }
       },
-      "description": "Fetch mapping with 2 index"
+      "description": "Fetch mapping with 2 keys"
     },
     {
       "method": "accessRedZoneMap",
@@ -23,7 +23,15 @@
       "result": {
         "redZoneMap": { "forty two": true }
       },
-      "description": "Fetch mapping with string index"
+      "description": "Fetch mapping with dynamically sized key"
+    },
+    {
+      "method": "accessOneMaybeMap",
+      "params": [5, 34],
+      "result": {
+        "severalMaybeMaps": { "5": { "maybeMap": { "34": true } } }
+      },
+      "description": "Fetch mapping nested within struct"
     }
   ]
 }

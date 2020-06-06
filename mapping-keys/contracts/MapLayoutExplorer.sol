@@ -9,6 +9,13 @@ contract MapLayoutExplorer {
     mapping(string => uint256) redZoneMap;
     mapping(uint256 => mapping(uint256 => address)) nestedMap;
 
+    struct OptionalMapping {
+        bool hasMapping;
+        mapping(uint256 => address) maybeMap;
+    }
+
+    mapping(uint256 => OptionalMapping) severalMaybeMaps;
+
     constructor() public {}
 
     function accessTheMap(uint256 index) public view returns (address) {
@@ -21,6 +28,10 @@ contract MapLayoutExplorer {
 
     function accessNestedMap(uint256 outerIndex, uint256 innerIndex) public view returns (address) {
         return nestedMap[outerIndex][innerIndex];
+    }
+
+    function accessOneMaybeMap(uint256 maybeIndex, uint256 index) public view returns (address) {
+        return severalMaybeMaps[maybeIndex].maybeMap[index];
     }
 
 }
