@@ -20,7 +20,9 @@ async function compile(path) {
             const lines = stdout.split("\n");
             const lineIndex = lines.findIndex((v) => v.includes(":"+contractName))
             const bytecode = "0x" + lines[lineIndex + 2];
-            const storageLayout = JSON.parse(lines[lineIndex + 4]).storage;
+            const storage = JSON.parse(lines[lineIndex + 4]);
+            const storageLayout = storage.storage;
+            const storageTypes = storage.types;
             return Promise.all([
                 fs.readFile("mappings.json", 'utf8'),
                 fs.readFile("mappingsOffset.tsv", 'utf8'),
@@ -66,6 +68,7 @@ async function compile(path) {
                 ]);
 
                 return {
+                    storageTypes,
                     storageLayout,
                     bytecode,
                     variables,

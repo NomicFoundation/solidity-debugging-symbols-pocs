@@ -1,0 +1,21 @@
+{
+  "contractName": "StructOnState",
+  "tests": [
+    {
+      "method": "setMapUU",
+      "params": [5, 34],
+      "result": {
+        "state": {
+          "mapUU": { "1":  true },
+          "mapMapAU": {
+            "4": {
+              "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true
+            }
+          }
+        },
+        "states": { "2": { "mapp": {"dos":  {"3":  true} } } }
+      },
+      "description": "Fetch mapping nested within struct"
+    }
+  ]
+}

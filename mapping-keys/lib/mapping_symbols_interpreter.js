@@ -3,8 +3,6 @@ const {toBN} = web3.utils;
 const util = require("util");
 const coder = require("@ethersproject/abi").defaultAbiCoder;
 
-const slot_size = 32n;
-
 function createTracer(web3) {
     const tracer = new TraceManager({ web3 });
     const bareResolveTrace = util.promisify(tracer.resolveTrace);
@@ -27,53 +25,52 @@ function createTracer(web3) {
     }
 }
 
-function getMappingLabel(slot, symbols, parentReference) {
-    if (parentReference) {
-        if (parentReference.type == "struct") return getStructFieldLabel(parentReference);
-        if (parentReference.type == "mapping") return parentReference.key;
-        throw new Error("Unknown reference type " + parentReference.type);
-    }
-
-    // This is a root mapping.
+function getRootLabel(slot, symbols) {
+    const slotBN = toBN(slot);
     for (const symbol of symbols.storageLayout) {
-        if (toBN(symbol.slot).eq(toBN(slot))) {
+        const slots = toBN(symbols.storageTypes[symbol.type].numberOfBytes).div(toBN(32));
+        if (toBN(symbol.slot).lte(slotBN) && toBN(symbol.slot).add(slots).gt(slotBN)) {
+            //This is a root mapping
             return symbol.label;
         }
     }
-    throw new Error("Couldn't retrieve the label for mapping.");
+
+    //Not a root mapping
+    return undefined;
 }
 
-function getStructFieldLabel(structFieldInfo) {
-    const fields = structFieldInfo.parent.fields;
-    const fieldLabel = fields[structFieldInfo.offset];
-    return fieldLabel;
-}
-
-function createMappingInfo(valueTypename, valueType) {
-    const mappingInfo = { canonicalSlotsMap: {} };
-    if (valueTypename == "struct") {
-        const fields = {};
-        // Beware: we assume mappings are always on reserved whole slots.
-        for (const member of valueType.members) {
-            if (toCanonicalType(member.type) == "mapping") {
-                fields[member.slot] = member.label;
+function createRootInfo(label, symbols) {
+    for (const symbol of symbols.storageLayout) {
+        if(symbol.label === label) {
+            const type = toCanonicalType(symbol.type);
+            if(type === 'mapping') {
+                return {
+                    keys: {},
+                    type: 'mapping',
+                    baseSlot: toBN(symbol.slot),
+                    completeType: symbol.type
+                }
+            } else if(type === 'struct') {
+                return {
+                    type: 'struct',
+                    completeType: symbol.type,
+                    baseSlot: toBN(symbol.slot),
+                }
+            } else {
+                throw Error("Unidentified root varible" + type);
             }
         }
-        mappingInfo.fields = fields;
     }
-    const numberOfBytes = BigInt(valueType.numberOfBytes);
-    mappingInfo.numberOfSlots = numberOfBytes / slot_size + (numberOfBytes % slot_size > 0n ? 1n : 0n);
-    mappingInfo.valueType = valueTypename;
-    return mappingInfo;
 }
 
-function populateGeneratedSlotsWithMappingParentInformation(thisMapping, mappingParent, generatedSlot, valueTypename, decodedKey) {
-    for (let i = 0n; i < thisMapping.numberOfSlots; i++) {
-        const valueSlot = BigInt(generatedSlot) + i;
-        // TODO: The generated slot is lacking padding here.
-        const normalizedValueSlot = "0x" + valueSlot.toString(16);
-        mappingParent[normalizedValueSlot] = { parent: thisMapping, offset: i.toString(), key: decodedKey, type: valueTypename };
+function addToMappingInfo(mappingInfo, slot, key, resultingSlot) {
+    if(mappingInfo.type === 'mapping') {
+        mappingInfo.keys[key] = resultingSlot;
     }
+}
+
+function hasKeys(obj) {
+    return !!obj && Object.keys(obj).length > 0;
 }
 
 function readMemory(memory, pointer, size) {
@@ -97,73 +94,35 @@ function getTypes(pc, symbols, deployedBytecode) {
 }
 
 function toCanonicalType(type) {
-    switch (type) {
-        case 'uint256':
-        case 't_uint256':
-            return 'uint256';
-        case 'bytes6':
-        case 't_bytes6':
-            return 'bytes6';
-        case 'string':
-        case 't_string_memory_ptr':
-        case 't_string_storage':
-            return 'string';
-        case 'address':
-        case 't_address':
-            return 'address';
-        case 't_bool':
-        case 'bool':
-            return 'bool';
-        // TODO: Check from where this type is coming from.
-        case 'address[]':
-            return 'array';
-        default: {
-            // This covers both 't_mapping' and 'mapping' prefixes
-            const mapping_identifier_index = String.prototype.indexOf.call(type, 'mapping');
-            if (mapping_identifier_index == 0 || mapping_identifier_index == 2) return 'mapping';
-            if (String.prototype.indexOf.call(type, 'struct') == 0) return 'struct';
-            if (String.prototype.indexOf.call(type, 'enum') == 0) return 'enum';
-            if (String.prototype.indexOf.call(type, 't_array') == 0) return 'array';
-            throw new Error('Unknown type ' + type);
-        }
+    if(type.startsWith("t_")) {
+        type = type.replace("t_", "");
     }
+
+    if(type.startsWith("string")) return "string";
+    if(type.startsWith("struct")) return "struct";
+    if(type.startsWith("mapping")) return "mapping";
+    if(type.startsWith("enum")) return "enum";
+    if(type.startsWith("array")) return "array";
+    return type;
+
 }
 
-
-// @param tx is of the form { hash: <tx hash> } where the tx hash is the one whose trace should be observed.
-// @param symbols is a list of bytecode offsets for position calculations for a given map.
-// @param tracer is the object that retrieves traces and allows observation of individual steps in them.
-// @returns an array of pair {slot,key} used in the transaction
-// Later on we could add some information to the values in the returned dictionary if warranted.
 /*
-
 --- mappingInfo:
 {
-    'theMap': {
-        'canonicalSlotsMap': {
+    'mapAsRootVariable': {
+        'type': 'mapping'
+        'completeType': 't_mapping(t_uint256=>t_uint256)'
+        'keys': {
             'key1': resultingSlot1,
             'key2': resultingSlot2,
         },
-        'numberOfSlots': 1,
-        'valueType': nonStructType
+        'baseSlot': 1,
     },
-    'severalMaybeMaps': {
-        'canonicalSlotsMap': {
-            'key1': resultingSlot1,
-            'key2': resultingSlot2,
-        },
-        // Fields in the struct that correspond to a mapping
-        'fields': {
-            1: labelSecondSlot
-        }
-        'numberOfSlots': 2
-        // This could potentially be replaced with the value type information itself if it proves to be necessary.
-        'valueType': 'struct',
-        // This field contains nested mappings. This object can have one or two levels of indirection.
-        // When the value type is a struct, this object has one entry per decoded key and then each of those can have one entry per struct field.
-        // When the value type is not a struct, this object has one entry per decoded key.
-        // Each of these entries at the deepest level has the same model as a root mapping like 'theMap' or 'severalMaybeMaps'.
-        'nestedMaps': [Object]
+    'structAsRootVariable': {
+        'type': struct
+        'completeType': 't_struct(MyStruct)_54'
+        'baseSlot': 2
     },
 
 }
@@ -177,42 +136,25 @@ function toCanonicalType(type) {
         'key4': resultingSlot4
     }
 }
----- mappingParent:
-// This map has references to mappings found within mappingInfo.
-// The key is a slot and the value is a minimal wrapper to maintain the information of the corresponding struct field and/or recovered key.
-{
-    'slot': {
-        'parent': mappingReference,
-        // This is the offset from the mapping slot. It can be higher than zero for structs.
-        'offset': 0,
-        // This is the decoded key that produces this slot in the parent mapping
-        'key': someKey,
-        // This is the value typename of the parent mapping.
-        'type': someTypename
-    }
-}
 --- result
 {
-    'theMap': {
+    'mapAsRootVariable': {
         'key1': resultingSlot1,
         'key2': {
             'key3': resultingSlot3,
             'key4': resultingSlot4
         }
     },
-    'severalMaybeMaps': {
-        'key5': {
-            // This is a struct field label where labelSecondSlot could be something like 'maybeMap'
-            labelSecondSlot: {
-                'key6': resultingSlot5
+    'structAsRootVariable': {
+        'mapMemeberLabel': {
+            'key5': {
+                'key6': resultingSlot6
             },
         }
     }
 
 }
  */
-
-
 async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true) {
     const success = await tracer.resolveTrace(tx);
     if (!success) throw new Error("Tracing unsuccessful?");
@@ -229,7 +171,6 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
 
     const number_of_steps = await tracer.getLength();
     const mappingInfo = {};
-    const mappingParent = {};
     const slots = {};
     for (let step = 0; step < number_of_steps; step++) {
         const pc = await tracer.getCurrentPC(step);
@@ -249,114 +190,106 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
 
             const key = readMemory(memory, buffer_pointer, key_length);
             const slot = readMemory(memory, slot_pointer, uint256_size);
-
-            // console.log("Key: " + util.inspect(key));
-            // console.log("Slot: " + util.inspect(slot));
-            // console.log("Resulting slot: " + util.inspect(resultingSlot));
-
             const { keyType, valueType } = getTypes(pc, symbols, deployedBytecode);
             const type = toCanonicalType(keyType);
-            const valueTypename = toCanonicalType(valueType.label);
-            // console.log("Key type: " + util.inspect(keyType));
-            // console.log("Value type: " + util.inspect(valueType));
-            // console.log("Canonical key type: " + util.inspect(type));
-            // console.log("Canonical value type: " + util.inspect(valueTypename));
             let decodedKey;
             if (type === 'string') {
                 decodedKey = web3.utils.toAscii(key);
             } else {
                 decodedKey = coder.decode([toCanonicalType(keyType)], key).toString();
             }
-            // The label may be part of the contract variable identifiers or it may be a member field label in a struct
-            // FIXME: This looks like it could break with nested structs. Write a test for that too.
-            const label = getMappingLabel(slot, symbols, mappingParent[slot]);
-            // console.log("Label: " + util.inspect(label));
 
             if (!slots[slot]) slots[slot] = {};
             slots[slot][decodedKey] = resultingSlot;
 
-            const parentReference = mappingParent[slot];
-            if (parentReference) {
-                // This is a nested mapping.
-                const parentMapping = parentReference.parent;
-                if (!parentMapping.nestedMaps) parentMapping.nestedMaps = {};
-                let thisMapping;
-                if (parentMapping.valueType == "struct") {
-                    const fieldMapping = parentMapping.nestedMaps[parentReference.key];
-                    if (!fieldMapping) {
-                        thisMapping = createMappingInfo(valueTypename, valueType);
-                        parentMapping.nestedMaps[parentReference.key] = { [label]: thisMapping };
-                    } else if (!fieldMapping[label]) {
-                        thisMapping = createMappingInfo(valueTypename, valueType);
-                        fieldMapping[label] = thisMapping;
-                    } else {
-                        thisMapping = fieldMapping[label];
-                    }
-                } else {
-                    if (!parentMapping.nestedMaps[parentReference.key]) {
-                        thisMapping = createMappingInfo(valueTypename, valueType);
-                        parentMapping.nestedMaps[parentReference.key] = thisMapping;
-                    } else {
-                        thisMapping = parentMapping.nestedMaps[parentReference.key];
-                    }
-                }
-                populateGeneratedSlotsWithMappingParentInformation(thisMapping, mappingParent, resultingSlot, valueTypename, decodedKey);
-                thisMapping.canonicalSlotsMap[decodedKey] = resultingSlot;
-            } else {
-                // This is a root mapping.
-                let thisMapping
-                if (!mappingInfo[label]) {
-                    thisMapping = createMappingInfo(valueTypename, valueType);
-                    mappingInfo[label] = thisMapping;
-                } else {
-                    thisMapping = mappingInfo[label];
-                }
-                populateGeneratedSlotsWithMappingParentInformation(thisMapping, mappingParent, resultingSlot, valueTypename, decodedKey);
-                thisMapping.canonicalSlotsMap[decodedKey] = resultingSlot;
+            const rootLabel = getRootLabel(slot, symbols);
+            if(rootLabel) {
+                if (!mappingInfo[rootLabel]) mappingInfo[rootLabel] = createRootInfo(rootLabel, symbols);
+                addToMappingInfo(mappingInfo[rootLabel], slot, decodedKey, resultingSlot);
             }
-
-            // console.log("Mapping info: " + util.inspect(mappingInfo, { depth: 5 }));
-            // console.log("Slots: " + util.inspect(slots));
-            // console.log("Mapping parents: " + util.inspect(mappingParent, { depth: 5 }));
         }
     }
 
     const recFillMapping = (mapping) => {
         const ret = {};
-        const nestedMaps = mapping.nestedMaps;
-        // Nested accesses override raw slots printing to show deep keys.
-        if (nestedMaps) {
-            Object.keys(nestedMaps).forEach(keyOrField => {
-                const value = nestedMaps[keyOrField];
-                // Check whether it is a mapping or not.
-                if (mapping.valueType == "struct") {
-                    const fieldValue = {};
-                    Object.keys(nestedMaps[keyOrField]).forEach((key) => {
-                        fieldValue[key] = recFillMapping(nestedMaps[keyOrField][key]);
+        let hasValues = false;
+
+        const typeInfo = symbols.storageTypes[mapping.completeType];
+
+        if(mapping.type === 'mapping') {
+            hasValues = hasKeys(mapping.keys);
+            const canonicalTypeResult = toCanonicalType(typeInfo.value);
+
+            if(canonicalTypeResult === 'mapping') {
+                Object.keys(mapping.keys).forEach(k => {
+                    ret[k] = recFillMapping({
+                        type: canonicalTypeResult,
+                        completeType: typeInfo.value,
+                        keys: slots[mapping.keys[k]] || {}
                     });
-                    ret[keyOrField] = fieldValue;
-                } else if (value.canonicalSlotsMap) {
-                    ret[keyOrField] = recFillMapping(nestedMaps[keyOrField]);
-                } else {
-                    ret[keyOrField] = nestedMaps[keyOrField];
-                }
-            });
-        }
-        Object.keys(mapping.canonicalSlotsMap).forEach(key => {
-            // TODO: this might not work as intended with structs?
-            // Check whether it is already present or not.
-            if (!ret[key]) {
-                ret[key] = mapping.canonicalSlotsMap[key];
+                })
+            } else if(canonicalTypeResult === 'struct'){
+                Object.keys(mapping.keys).forEach(k => {
+                    ret[k] = recFillMapping({
+                        type: canonicalTypeResult,
+                        completeType: typeInfo.value,
+                        baseSlot: toBN(mapping.keys[k])
+                    });
+                })
+            } else {
+                Object.keys(mapping.keys).forEach(k => {
+                    ret[k] = mapping.keys[k];
+                })
             }
-        });
-        return ret;
+        } else if(mapping.type === 'struct') {
+           for(let member of typeInfo.members) {
+               const memberSlot = "0x" + mapping.baseSlot.add(toBN(member.slot)).toString(16,64);
+               const canonicalMemberType = toCanonicalType(member.type);
+
+               if(canonicalMemberType === 'mapping') {
+                   if(slots[memberSlot] && hasKeys(slots[memberSlot])) {
+                       hasValues = true;
+                       const { ret: _ret, hasValues: _hasValues } = recFillMapping({
+                           type: canonicalMemberType,
+                           completeType: member.type,
+                           keys: slots[memberSlot] || {}
+                       });
+                       if(_hasValues) ret[member.label] = _ret;
+                   }
+               } else if(canonicalMemberType === 'struct') {
+                   const { ret: _ret, hasValues: _hasValues } = recFillMapping({
+                       type: canonicalMemberType,
+                       completeType: member.type,
+                       baseSlot: toBN(memberSlot)
+                   });
+                   if(_hasValues) ret[member.label] = _ret;
+                   hasValues = hasValues || _hasValues;
+               }
+           }
+        } else {
+            throw Error("Unkown mapping type")
+        }
+
+        return {ret, hasValues};
     };
 
-    const mappingResult = Object.keys(mappingInfo).reduce((o, m) => {
+    const removeHasValid = (obj) => {
+        if(!(obj instanceof Object)) return obj;
+        let { ret } = obj;
+        if(!ret) ret = obj;
+        let ans = {};
+        Object.keys(ret).forEach(k=>
+          ans[k] = removeHasValid(ret[k])
+        );
+        return ans;
+    };
+
+    let mappingResult = Object.keys(mappingInfo).reduce((o, m) => {
         o[m] = recFillMapping(mappingInfo[m]);
         return o;
     }, {});
-    // console.log("Mapping result: " + util.inspect(mappingResult, { depth: 5 }));
+
+    mappingResult = removeHasValid({ret: mappingResult});
     return mappingResult;
 }
 
