@@ -106,6 +106,7 @@ function toCanonicalType(type) {
             return 'bytes6';
         case 'string':
         case 't_string_memory_ptr':
+        case 't_string_storage':
             return 'string';
         case 'address':
         case 't_address':
@@ -113,11 +114,16 @@ function toCanonicalType(type) {
         case 't_bool':
         case 'bool':
             return 'bool';
+        // TODO: Check from where this type is coming from.
+        case 'address[]':
+            return 'array';
         default: {
             // This covers both 't_mapping' and 'mapping' prefixes
             const mapping_identifier_index = String.prototype.indexOf.call(type, 'mapping');
             if (mapping_identifier_index == 0 || mapping_identifier_index == 2) return 'mapping';
             if (String.prototype.indexOf.call(type, 'struct') == 0) return 'struct';
+            if (String.prototype.indexOf.call(type, 'enum') == 0) return 'enum';
+            if (String.prototype.indexOf.call(type, 't_array') == 0) return 'array';
             throw new Error('Unknown type ' + type);
         }
     }
