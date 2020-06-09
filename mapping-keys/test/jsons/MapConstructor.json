@@ -11,14 +11,14 @@
   ],
   "tests": [
     {
-      "method": "moveValue",
-      "params": [ "key3" ],
       "constructorParams": [
         "myOriginalKey",
         "value",
         "key2",
         "value2"
       ],
+      "method": "moveValue",
+      "params": [ "key3" ],
       "result": {
         "map": {
           "myOriginalKey": true,

@@ -15,7 +15,7 @@
           "0": true
         }
       },
-      "description": "Creating an Event"
+      "description": "Create an Event"
     },
     {
       "before": [
@@ -35,7 +35,7 @@
           "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true
         }
       },
-      "description": "Purchasing a ticket with ETH"
+      "description": "Purchase a ticket with ETH"
     },
     {
       "before": [

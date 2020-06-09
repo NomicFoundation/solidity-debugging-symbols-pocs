@@ -86,7 +86,7 @@
         "voteCountMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true},
         "approveVotesMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true}
       },
-      "description": "Submit a proposal"
+      "description": "Sign to approve a proposal"
     },
     {
       "before": [
@@ -136,7 +136,7 @@
         "approveVotesMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true},
         "proposalApprovedMapping": { "0xdB899E55b8E7476c93Ba86566e35485a0CEC847a":  true}
       },
-      "description": "Submit a proposal"
+      "description": "Approve a proposal with 2 signatures"
     }
   ]
 }

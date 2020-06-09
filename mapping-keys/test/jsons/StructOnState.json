@@ -2,20 +2,120 @@
   "contractName": "StructOnState",
   "tests": [
     {
-      "method": "setMapUU",
-      "params": [5, 34],
+      "method": "accessFirstStructId",
+      "params": [5],
       "result": {
-        "state": {
-          "mapUU": { "1":  true },
-          "mapMapAU": {
-            "4": {
-              "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": true
+        "randomStruct": {
+          "structId": { "mapToId":  { "5":  true }
+          }
+        }
+      },
+      "description": "Access first nested struct mapping"
+    },
+    {
+      "method": "accessAddressInStruct",
+      "params": [52],
+      "result": {
+        "randomStruct": {
+          "mapToAddress": { "52":  true }
+        }
+      },
+      "description": "Access nested struct mapping to address"
+    },
+    {
+      "method": "accessSecondStructId",
+      "params": [10],
+      "result": {
+        "randomStruct": {
+          "secondStructId": { "mapToId":  { "10":  true }
+          }
+        }
+      },
+      "description": "Access second nested struct mapping"
+    },
+    {
+      "method": "accessDinamicKey",
+      "params": ["saraasa"],
+      "result": {
+        "randomStruct": {
+          "dinamicKeyMapping": { "saraasa": true }
+        }
+      },
+      "description": "Access second nested struct mapping"
+    },
+    {
+      "method": "accessFirstStructIdInMapping",
+      "params": [13, 37],
+      "result": {
+        "manyRandomStructs": {
+          "13": {
+            "structId": {
+              "mapToId": {
+                "37": true
+              }
             }
           }
-        },
-        "states": { "2": { "mapp": {"dos":  {"3":  true} } } }
+        }
       },
-      "description": "Fetch mapping nested within struct"
+      "description": "Access first nested struct mapping from a mapping"
+    },
+    {
+      "method": "accessSecondStructIdInMapping",
+      "params": [13, 37],
+      "result": {
+        "manyRandomStructs": {
+          "13": {
+            "secondStructId": {
+              "mapToId": {
+                "37": true
+              }
+            }
+          }
+        }
+      },
+      "description": "Access second nested struct mapping from a mapping"
+    },
+    {
+      "method": "accessAllMaps",
+      "params": [1, 100, "newKey"],
+      "result": {
+        "randomStruct": {
+          "structId": { "mapToId": { "100": true } },
+          "secondStructId": { "mapToId": { "100": true } },
+          "manyStructIds": { "1": { "mapToId": { "100": true } } },
+          "nestedMapOfAddress": { "1":  { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076" : true }},
+          "dinamicKeyMapping": { "newKey": true }
+        }
+      },
+      "description": "Access all maps in a struct"
+    },
+    {
+      "method": "accessMultipleNestedMapping",
+      "params": [100, 5],
+      "result": {
+        "rootMap": {
+          "nested": {
+            "100": {
+              "nested": {
+                "101": {
+                  "nested": {
+                    "102": {
+                      "nested": {
+                        "103": {
+                          "nested": {
+                            "104":true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Access nested map multiple times with different keys"
     }
   ]
 }

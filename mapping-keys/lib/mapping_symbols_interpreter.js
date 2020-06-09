@@ -45,10 +45,9 @@ function createRootInfo(label, symbols) {
             const type = toCanonicalType(symbol.type);
             if(type === 'mapping') {
                 return {
-                    keys: {},
                     type: 'mapping',
-                    baseSlot: toBN(symbol.slot),
-                    completeType: symbol.type
+                    completeType: symbol.type,
+                    baseSlot: toBN(symbol.slot)
                 }
             } else if(type === 'struct') {
                 return {
@@ -57,20 +56,18 @@ function createRootInfo(label, symbols) {
                     baseSlot: toBN(symbol.slot),
                 }
             } else {
-                throw Error("Unidentified root varible" + type);
+                throw Error(`Unidentified root varible ${label}: ${type}`);
             }
         }
     }
 }
 
-function addToMappingInfo(mappingInfo, slot, key, resultingSlot) {
-    if(mappingInfo.type === 'mapping') {
-        mappingInfo.keys[key] = resultingSlot;
-    }
-}
-
 function hasKeys(obj) {
     return !!obj && Object.keys(obj).length > 0;
+}
+
+function bnToSlot(bn) {
+    return "0x" + bn.toString(16,64)
 }
 
 function readMemory(memory, pointer, size) {
@@ -84,8 +81,6 @@ function readMemory(memory, pointer, size) {
 function getTypes(pc, symbols, deployedBytecode) {
     const bytecode = deployedBytecode ? "deployedBytecodeOffset" : "bytecodeOffset";
     for (let i = 0; i < symbols.mappings.length; i++) {
-        // TODO: check if this is reliable
-        // Perhaps some assumption is being made about the type of expressions?
         if (symbols.mappings[i][bytecode] === pc.toString()) {
             return { keyType: symbols.mappings[i].key, valueType: symbols.mappings[i].value };
         }
@@ -104,19 +99,14 @@ function toCanonicalType(type) {
     if(type.startsWith("enum")) return "enum";
     if(type.startsWith("array")) return "array";
     return type;
-
 }
 
 /*
---- mappingInfo:
+--- rootMappingInfo:
 {
     'mapAsRootVariable': {
         'type': 'mapping'
         'completeType': 't_mapping(t_uint256=>t_uint256)'
-        'keys': {
-            'key1': resultingSlot1,
-            'key2': resultingSlot2,
-        },
         'baseSlot': 1,
     },
     'structAsRootVariable': {
@@ -170,7 +160,7 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
     }
 
     const number_of_steps = await tracer.getLength();
-    const mappingInfo = {};
+    const rootMappingInfo = {};
     const slots = {};
     for (let step = 0; step < number_of_steps; step++) {
         const pc = await tracer.getCurrentPC(step);
@@ -190,7 +180,7 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
 
             const key = readMemory(memory, buffer_pointer, key_length);
             const slot = readMemory(memory, slot_pointer, uint256_size);
-            const { keyType, valueType } = getTypes(pc, symbols, deployedBytecode);
+            const { keyType } = getTypes(pc, symbols, deployedBytecode);
             const type = toCanonicalType(keyType);
             let decodedKey;
             if (type === 'string') {
@@ -204,64 +194,57 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
 
             const rootLabel = getRootLabel(slot, symbols);
             if(rootLabel) {
-                if (!mappingInfo[rootLabel]) mappingInfo[rootLabel] = createRootInfo(rootLabel, symbols);
-                addToMappingInfo(mappingInfo[rootLabel], slot, decodedKey, resultingSlot);
+                if (!rootMappingInfo[rootLabel]) rootMappingInfo[rootLabel] = createRootInfo(rootLabel, symbols);
             }
         }
     }
 
+    //Recursive function that will fill up the result
     const recFillMapping = (mapping) => {
+        //ret: Resulting map of keys or members used
         const ret = {};
+        //hasValues: Either there is a meaningfull value at this level (a key used) or there is
+        //one at a deeper level.
         let hasValues = false;
-
         const typeInfo = symbols.storageTypes[mapping.completeType];
 
         if(mapping.type === 'mapping') {
-            hasValues = hasKeys(mapping.keys);
+            //If the type is mapping, go through every key, check the supposed result of the key
+            const mappingKeys = slots[bnToSlot(mapping.baseSlot)] || {};
+            //Unless there are keys in the mapping, dont show it in the result
+            hasValues = hasKeys(mappingKeys);
             const canonicalTypeResult = toCanonicalType(typeInfo.value);
 
-            if(canonicalTypeResult === 'mapping') {
-                Object.keys(mapping.keys).forEach(k => {
+            if(canonicalTypeResult === 'mapping' || canonicalTypeResult === 'struct') {
+                // If the resultType is a mapping or a struct, recursively call the function
+                // Giving the baseSlot as the resulting slot
+               for(let k of Object.keys(mappingKeys)) {
                     ret[k] = recFillMapping({
                         type: canonicalTypeResult,
                         completeType: typeInfo.value,
-                        keys: slots[mapping.keys[k]] || {}
-                    });
-                })
-            } else if(canonicalTypeResult === 'struct'){
-                Object.keys(mapping.keys).forEach(k => {
-                    ret[k] = recFillMapping({
-                        type: canonicalTypeResult,
-                        completeType: typeInfo.value,
-                        baseSlot: toBN(mapping.keys[k])
-                    });
-                })
+                        baseSlot: toBN(mappingKeys[k])
+                    }).ret;
+                }
             } else {
-                Object.keys(mapping.keys).forEach(k => {
-                    ret[k] = mapping.keys[k];
-                })
+                for(let k of Object.keys(mappingKeys)) {
+                    ret[k] = mappingKeys[k];
+                }
             }
         } else if(mapping.type === 'struct') {
-           for(let member of typeInfo.members) {
-               const memberSlot = "0x" + mapping.baseSlot.add(toBN(member.slot)).toString(16,64);
+            //If the type is a struct, iterate each member and calculate the member slot
+            //based on the baseSlot. If the type is mapping or struct recursively call the
+            // function that would check If any key is used with that slot
+            for(let member of typeInfo.members) {
+               const memberSlot = bnToSlot(mapping.baseSlot.add(toBN(member.slot)));
                const canonicalMemberType = toCanonicalType(member.type);
 
-               if(canonicalMemberType === 'mapping') {
-                   if(slots[memberSlot] && hasKeys(slots[memberSlot])) {
-                       hasValues = true;
-                       const { ret: _ret, hasValues: _hasValues } = recFillMapping({
-                           type: canonicalMemberType,
-                           completeType: member.type,
-                           keys: slots[memberSlot] || {}
-                       });
-                       if(_hasValues) ret[member.label] = _ret;
-                   }
-               } else if(canonicalMemberType === 'struct') {
+               if(canonicalMemberType === 'mapping' || canonicalMemberType === 'struct') {
                    const { ret: _ret, hasValues: _hasValues } = recFillMapping({
                        type: canonicalMemberType,
                        completeType: member.type,
                        baseSlot: toBN(memberSlot)
                    });
+                   //If no keys were used in that member, dont add it
                    if(_hasValues) ret[member.label] = _ret;
                    hasValues = hasValues || _hasValues;
                }
@@ -278,17 +261,16 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
         let { ret } = obj;
         if(!ret) ret = obj;
         let ans = {};
-        Object.keys(ret).forEach(k=>
-          ans[k] = removeHasValid(ret[k])
-        );
+        for(let k of Object.keys(ret)) ans[k] = removeHasValid(ret[k]);
         return ans;
     };
 
-    let mappingResult = Object.keys(mappingInfo).reduce((o, m) => {
-        o[m] = recFillMapping(mappingInfo[m]);
+    let mappingResult = Object.keys(rootMappingInfo).reduce((o, m) => {
+        o[m] = recFillMapping(rootMappingInfo[m]);
         return o;
     }, {});
 
+    //Remove ret and hasValid attributes used in the recursive function
     mappingResult = removeHasValid({ret: mappingResult});
     return mappingResult;
 }

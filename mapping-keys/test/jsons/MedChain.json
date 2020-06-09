@@ -105,7 +105,7 @@
         "patient_aadhaar_mapping": { "10":  true},
         "prescription_id_mapping": { "1":  true, "2": true, "3": true }
       },
-      "description": "Fetch medical history"
+      "description": "Fetch medical history in a loop"
     },
     {
       "before": [
