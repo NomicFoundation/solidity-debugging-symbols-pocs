@@ -25,6 +25,15 @@ function createTracer(web3) {
     }
 }
 
+function readMemory(memory, pointer, size) {
+    const value_array = [];
+    for (let i = pointer * 2n; i < (pointer + size) * 2n; i++) {
+        value_array.push(memory[i]);
+    }
+    return "0x" + value_array.join("");
+}
+
+// Retrieve label of a root variable
 function getRootLabel(slot, symbols) {
     const slotBN = toBN(slot);
     for (const symbol of symbols.storageLayout) {
@@ -35,10 +44,11 @@ function getRootLabel(slot, symbols) {
         }
     }
 
-    //Not a root mapping
+    //Not a root variable
     return undefined;
 }
 
+//Creates the initial information for root mappings and structs
 function createRootInfo(label, symbols) {
     for (const symbol of symbols.storageLayout) {
         if(symbol.label === label) {
@@ -62,32 +72,6 @@ function createRootInfo(label, symbols) {
     }
 }
 
-function hasKeys(obj) {
-    return !!obj && Object.keys(obj).length > 0;
-}
-
-function bnToSlot(bn) {
-    return "0x" + bn.toString(16,64)
-}
-
-function readMemory(memory, pointer, size) {
-    const value_array = [];
-    for (let i = pointer * 2n; i < (pointer + size) * 2n; i++) {
-        value_array.push(memory[i]);
-    }
-    return "0x" + value_array.join("");
-}
-
-function getTypes(pc, symbols, deployedBytecode) {
-    const bytecode = deployedBytecode ? "deployedBytecodeOffset" : "bytecodeOffset";
-    for (let i = 0; i < symbols.mappings.length; i++) {
-        if (symbols.mappings[i][bytecode] === pc.toString()) {
-            return { keyType: symbols.mappings[i].key, valueType: symbols.mappings[i].value };
-        }
-    }
-    return null;
-}
-
 function toCanonicalType(type) {
     if(type.startsWith("t_")) {
         type = type.replace("t_", "");
@@ -99,6 +83,23 @@ function toCanonicalType(type) {
     if(type.startsWith("enum")) return "enum";
     if(type.startsWith("array")) return "array";
     return type;
+}
+
+function decodeKey(key, keyType) {
+    const type = toCanonicalType(keyType);
+    if (type === 'string') {
+        return web3.utils.toAscii(key);
+    } else {
+        return coder.decode([toCanonicalType(keyType)], key).toString();
+    }
+}
+
+function hasKeys(obj) {
+    return !!obj && Object.keys(obj).length > 0;
+}
+
+function bnToSlot(bn) {
+    return "0x" + bn.toString(16,64)
 }
 
 /*
@@ -180,21 +181,12 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
 
             const key = readMemory(memory, buffer_pointer, key_length);
             const slot = readMemory(memory, slot_pointer, uint256_size);
-            const { keyType } = getTypes(pc, symbols, deployedBytecode);
-            const type = toCanonicalType(keyType);
-            let decodedKey;
-            if (type === 'string') {
-                decodedKey = web3.utils.toAscii(key);
-            } else {
-                decodedKey = coder.decode([toCanonicalType(keyType)], key).toString();
-            }
-
             if (!slots[slot]) slots[slot] = {};
-            slots[slot][decodedKey] = resultingSlot;
+            slots[slot][key] = resultingSlot;
 
             const rootLabel = getRootLabel(slot, symbols);
-            if(rootLabel) {
-                if (!rootMappingInfo[rootLabel]) rootMappingInfo[rootLabel] = createRootInfo(rootLabel, symbols);
+            if(rootLabel && !rootMappingInfo[rootLabel]) {
+                rootMappingInfo[rootLabel] = createRootInfo(rootLabel, symbols);
             }
         }
     }
@@ -219,7 +211,7 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
                 // If the resultType is a mapping or a struct, recursively call the function
                 // Giving the baseSlot as the resulting slot
                for(let k of Object.keys(mappingKeys)) {
-                    ret[k] = recFillMapping({
+                    ret[decodeKey(k, typeInfo.key)] = recFillMapping({
                         type: canonicalTypeResult,
                         completeType: typeInfo.value,
                         baseSlot: toBN(mappingKeys[k])
@@ -227,7 +219,7 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
                 }
             } else {
                 for(let k of Object.keys(mappingKeys)) {
-                    ret[k] = mappingKeys[k];
+                    ret[decodeKey(k, typeInfo.key)] = mappingKeys[k];
                 }
             }
         } else if(mapping.type === 'struct') {
