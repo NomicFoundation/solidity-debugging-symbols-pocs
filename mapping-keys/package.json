@@ -1,15 +1,14 @@
 {
-  "name": "debugging-symbols",
+  "name": "debugging-symbols-mapping-keys",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "buidler test"
   },
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "ganache-cli": "^6.9.1",
     "remix-lib": "^0.4.29"
   },
   "devDependencies": {
