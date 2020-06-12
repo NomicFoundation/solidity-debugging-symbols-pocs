@@ -23,6 +23,12 @@ function createTracer(web3) {
     }
 }
 
+async function traceTransaction(tracer, tx) {
+    const success = await tracer.resolveTrace(tx);
+    if (!success) throw new Error("Tracing unsuccessful?");
+}
+
 module.exports = {
-    createTracer
+    createTracer,
+    traceTransaction
 }

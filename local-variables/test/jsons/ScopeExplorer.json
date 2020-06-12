@@ -1,0 +1,10 @@
+{
+  "contractName": "ScopeExplorer",
+  "tests": [
+    {
+      "method": "declareElementaryVariable",
+      "params": [],
+      "description": "Call function that declares a simple uint256 variable."
+    }
+  ]
+}
