@@ -43,11 +43,11 @@ async function retrieveLiveVariablesInTrace(trace, symbols, stopBytecodeOffset, 
         symbolsByOffset[bytecodeOffset].push(symbol);
     }
 
-    const number_of_steps = await trace.getLength();
+    const numberOfSteps = await trace.getLength();
     let iteration = 0;
     // TODO: restrict liveVariables to a certain scope.
-    const liveVariables = [];
-    for (let step = 0; step < number_of_steps; step++) {
+    let liveVariables = [];
+    for (let step = 0; step < numberOfSteps; step++) {
         const pc = await trace.getCurrentPC(step);
         const stack = await trace.getStackAt(step);
         const offsetSymbols = symbolsByOffset[pc];
@@ -62,18 +62,31 @@ async function retrieveLiveVariablesInTrace(trace, symbols, stopBytecodeOffset, 
                 liveVariables.push({
                     stackPointer,
                     symbol
-                })
+                });
             }
         }
-        // TODO: cleanup variables that are out of scope.
+        // FIXME: This should use the end of scope markers instead.
+        liveVariables = liveVariables.filter((variable) => {
+            return variable.stackPointer <= stack.length;
+        });
         if (pc == stopBytecodeOffset) {
             iteration += 1;
             if (iteration == iterations) {
                 // TODO: read variable values and decode them.
+                for (const variable of liveVariables) {
+                    const type = toCanonicalType(variable.symbol.typeName);
+                    // default location seems to be the stack?
+                    if (variable.symbol.location == "default") {
+                        variable.value = decodeValue("0x" + stack[variable.stackPointer], type);
+                    } else {
+                        throw Error(`Unknown location ${location}`);
+                    }
+                }
                 break;
             }
         }
     }
+    console.log(`Live variables: ${util.inspect(liveVariables, { depth: 5 })}`);
     return liveVariables;
 }
 
