@@ -17,6 +17,8 @@ const assertHasExactKeys = (result, target) => {
 
 const filenames = fs.readdirSync("test/jsons");
 let testDefinitions = filenames.map(file => require(`./jsons/${file}`));
+
+//Check if there is the "only" flag on some tests
 let hasOnly = false;
 const onlys = testDefinitions.map(td => {
   const ans = {
@@ -34,7 +36,7 @@ if(hasOnly) {
 }
 
 testDefinitions.forEach( testDefinition => {
-  contract(testDefinition.contractName, accounts => {
+  contract(testDefinition.contractName, () => {
     let tracer, symbols, Contract;
 
     before(async () => {

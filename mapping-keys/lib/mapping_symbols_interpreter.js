@@ -181,9 +181,12 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
 
             const key = readMemory(memory, buffer_pointer, key_length);
             const slot = readMemory(memory, slot_pointer, uint256_size);
+
+            //All slots queried with keys are saved
             if (!slots[slot]) slots[slot] = {};
             slots[slot][key] = resultingSlot;
 
+            //RootMappingInfo works as a starting point to know which mappings where used.
             const rootLabel = getRootLabel(slot, symbols);
             if(rootLabel && !rootMappingInfo[rootLabel]) {
                 rootMappingInfo[rootLabel] = createRootInfo(rootLabel, symbols);
@@ -195,13 +198,14 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
     const recFillMapping = (mapping) => {
         //ret: Resulting map of keys or members used
         const ret = {};
-        //hasValues: Either there is a meaningfull value at this level (a key used) or there is
+        //hasValues: Either there is a meaningful value at this level (a key used) or there is
         //one at a deeper level.
         let hasValues = false;
         const typeInfo = symbols.storageTypes[mapping.completeType];
 
         if(mapping.type === 'mapping') {
-            //If the type is mapping, go through every key, check the supposed result of the key
+            // If the type is mapping, go through every key used with that slot,
+            // check the supposed result type
             const mappingKeys = slots[bnToSlot(mapping.baseSlot)] || {};
             //Unless there are keys in the mapping, dont show it in the result
             hasValues = hasKeys(mappingKeys);

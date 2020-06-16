@@ -1,5 +1,5 @@
 const { exec } = require("child_process");
-const fs = require('fs').promises
+const fs = require('fs').promises;
 
 async function sh(cmd) {
     return new Promise(function (resolve, reject) {
@@ -18,11 +18,13 @@ async function compile(path) {
             //Hack for multiple contracts on same file
             const contractName = (/([^/]+)(\.sol)$/).exec(path)[1];
             const lines = stdout.split("\n");
-            const lineIndex = lines.findIndex((v) => v.includes(":"+contractName))
-            const bytecode = "0x" + lines[lineIndex + 2];
-            const storage = JSON.parse(lines[lineIndex + 4]);
+            const contractLineIndex = lines.findIndex((v) => v.includes(":"+contractName));
+            const bytecode = "0x" + lines[contractLineIndex + 2];
+            const storage = JSON.parse(lines[contractLineIndex + 4]);
             const storageLayout = storage.storage;
             const storageTypes = storage.types;
+
+            //Files created by the debugging symbols rough implementation
             return Promise.all([
                 fs.readFile("mappings.json", 'utf8'),
                 fs.readFile("mappingsOffset.tsv", 'utf8'),
