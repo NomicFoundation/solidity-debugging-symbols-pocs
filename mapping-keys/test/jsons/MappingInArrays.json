@@ -1,0 +1,66 @@
+{
+  "contractName": "MappingInArrays",
+  "tests": [
+    {
+      "method": "accessFixedMap",
+      "params": [1, 10000],
+      "result": {
+        "fixedMapArray": { "1": { "10000": true } }
+      },
+      "description": "Accesing a fixed array of mappings"
+    },
+    {
+      "method": "accessFixedNestedMap",
+      "params": [1, 10000, "myTest"],
+      "result": {
+        "fixedNestedMapArray": { "1":  { "10000" : { "myTest": true } } }
+      },
+      "description": "Accesing a fixed array of nexted mappings"
+    },
+    {
+      "method": "accessNestedMapOfFixed",
+      "params": ["0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076", 3, "newKey"],
+      "result": {
+        "nestedMapOfFixedArrays": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076":  { "3" : { "newKey": true } } }
+      },
+      "description": "Accesing a mapping of fixed array of mappings"
+    },
+    {
+      "method": "accessFirstMap",
+      "params": [1, "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076", 4, 1230],
+      "result": {
+        "fixedArrayWithStructs": {
+          "1": {
+            "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": {
+              "4": {
+                "firstMap": {
+                  "1230": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Access mapping with arrays and structs first member"
+    },
+    {
+      "method": "accessSecondMap",
+      "params": [1, "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076", 4, 3252],
+      "result": {
+        "fixedArrayWithStructs": {
+          "1": {
+            "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": {
+              "4": {
+                "secondMap": {
+                  "3252": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Access mapping with arrays and structs second member"
+    }
+
+  ]
+}

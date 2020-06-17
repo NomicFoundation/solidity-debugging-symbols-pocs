@@ -34,11 +34,11 @@
       "description": "Access second nested struct mapping"
     },
     {
-      "method": "accessDinamicKey",
+      "method": "accessDynamicKey",
       "params": ["saraasa"],
       "result": {
         "randomStruct": {
-          "dinamicKeyMapping": { "saraasa": true }
+          "dynamicKeyMapping": { "saraasa": true }
         }
       },
       "description": "Access second nested struct mapping"
@@ -84,7 +84,7 @@
           "secondStructId": { "mapToId": { "100": true } },
           "manyStructIds": { "1": { "mapToId": { "100": true } } },
           "nestedMapOfAddress": { "1":  { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076" : true }},
-          "dinamicKeyMapping": { "newKey": true }
+          "dynamicKeyMapping": { "newKey": true }
         }
       },
       "description": "Access all maps in a struct"

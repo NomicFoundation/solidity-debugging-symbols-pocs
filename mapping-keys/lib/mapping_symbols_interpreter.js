@@ -1,5 +1,5 @@
 const { TraceManager } = require("remix-lib").trace;
-const {toBN} = web3.utils;
+const {toBN, sha3, hexToBytes } = web3.utils;
 const util = require("util");
 const coder = require("@ethersproject/abi").defaultAbiCoder;
 
@@ -37,10 +37,22 @@ function readMemory(memory, pointer, size) {
 function getRootLabel(slot, symbols) {
     const slotBN = toBN(slot);
     for (const symbol of symbols.storageLayout) {
-        const slots = toBN(symbols.storageTypes[symbol.type].numberOfBytes).div(toBN(32));
-        if (toBN(symbol.slot).lte(slotBN) && toBN(symbol.slot).add(slots).gt(slotBN)) {
-            //This is a root mapping
-            return symbol.label;
+        if(toCanonicalType(symbol.type) === 'dynamic array') {
+            const baseCompleteType = symbols.storageTypes[symbol.type].base;
+            const baseSize = toBN(symbols.storageTypes[baseCompleteType].numberOfBytes).div(toBN(32));
+            const arrSize = toBN(10).mul(baseSize);
+            const baseSlot = toBN(sha3(hexToBytes(bnToSlot(toBN(symbol.slot)))));
+            if (baseSlot.lte(slotBN) && toBN(baseSlot).add(arrSize).gt(slotBN)) {
+                //This is a root mapping
+                return symbol.label;
+            }
+        } else {
+
+            const slots = toBN(symbols.storageTypes[symbol.type].numberOfBytes).div(toBN(32));
+            if (toBN(symbol.slot).lte(slotBN) && toBN(symbol.slot).add(slots).gt(slotBN)) {
+                //This is a root mapping
+                return symbol.label;
+            }
         }
     }
 
@@ -53,17 +65,11 @@ function createRootInfo(label, symbols) {
     for (const symbol of symbols.storageLayout) {
         if(symbol.label === label) {
             const type = toCanonicalType(symbol.type);
-            if(type === 'mapping') {
+            if(isDynamicType(type)) {
                 return {
-                    type: 'mapping',
+                    type,
                     completeType: symbol.type,
                     baseSlot: toBN(symbol.slot)
-                }
-            } else if(type === 'struct') {
-                return {
-                    type: 'struct',
-                    completeType: symbol.type,
-                    baseSlot: toBN(symbol.slot),
                 }
             } else {
                 throw Error(`Unidentified root varible ${label}: ${type}`);
@@ -81,8 +87,18 @@ function toCanonicalType(type) {
     if(type.startsWith("struct")) return "struct";
     if(type.startsWith("mapping")) return "mapping";
     if(type.startsWith("enum")) return "enum";
-    if(type.startsWith("array")) return "array";
+    if(type.startsWith("array")) {
+        if(type.endsWith("dyn_storage")) {
+            return "dynamic array";
+        } else {
+            return "fixed array";
+        }
+    }
     return type;
+}
+
+function isDynamicType(type) {
+    return type === "mapping" || type === "struct" || type === "dynamic array" || type === "fixed array";
 }
 
 function decodeKey(key, keyType) {
@@ -211,7 +227,7 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
             hasValues = hasKeys(mappingKeys);
             const canonicalTypeResult = toCanonicalType(typeInfo.value);
 
-            if(canonicalTypeResult === 'mapping' || canonicalTypeResult === 'struct') {
+            if(isDynamicType(canonicalTypeResult)) {
                 // If the resultType is a mapping or a struct, recursively call the function
                 // Giving the baseSlot as the resulting slot
                for(let k of Object.keys(mappingKeys)) {
@@ -231,22 +247,83 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
             //based on the baseSlot. If the type is mapping or struct recursively call the
             // function that would check If any key is used with that slot
             for(let member of typeInfo.members) {
-               const memberSlot = bnToSlot(mapping.baseSlot.add(toBN(member.slot)));
+               const memberSlot = mapping.baseSlot.add(toBN(member.slot));
                const canonicalMemberType = toCanonicalType(member.type);
 
-               if(canonicalMemberType === 'mapping' || canonicalMemberType === 'struct') {
+               if(isDynamicType(canonicalMemberType)) {
                    const { ret: _ret, hasValues: _hasValues } = recFillMapping({
                        type: canonicalMemberType,
                        completeType: member.type,
-                       baseSlot: toBN(memberSlot)
+                       baseSlot: memberSlot
                    });
                    //If no keys were used in that member, dont add it
                    if(_hasValues) ret[member.label] = _ret;
                    hasValues = hasValues || _hasValues;
                }
            }
+        } else if(mapping.type === 'fixed array' || mapping.type === 'dynamic array') {
+            //If the type is a struct, iterate each member and calculate the member slot
+            //based on the baseSlot. If the type is mapping or struct recursively call the
+            // function that would check If any key is used with that slot
+            const baseCompleteType = symbols.storageTypes[mapping.completeType].base;
+            const baseCanonicalType = toCanonicalType(baseCompleteType);
+            if (!isDynamicType(baseCanonicalType)) {
+                return { ret: {}, hasValues: false}
+            }
+
+            const baseSize = toBN(symbols.storageTypes[baseCompleteType].numberOfBytes).div(toBN(32));
+            let arrSize, currentSlot;
+            if(mapping.type === 'dynamic array') {
+                arrSize = toBN(10).mul(baseSize);
+                currentSlot = toBN(sha3(hexToBytes(bnToSlot(mapping.baseSlot))));
+            } else {
+                arrSize = toBN(symbols.storageTypes[mapping.completeType].numberOfBytes).div(toBN(32));
+                currentSlot = mapping.baseSlot;
+            }
+            let index = 0;
+            let baseArrSlot = toBN(currentSlot);
+            while(currentSlot.lte(baseArrSlot.add(arrSize))) {
+                const {ret: _ret, hasValues: _hasValues} = recFillMapping({
+                    type: baseCanonicalType,
+                    completeType: baseCompleteType,
+                    baseSlot: currentSlot
+                });
+                //If no keys were used in that member, dont add it
+                if (_hasValues) ret[index.toString()] = _ret;
+                hasValues = hasValues || _hasValues;
+
+                currentSlot = currentSlot.add(baseSize);
+                index++;
+            }
+        } else if(mapping.type === 'dynamic array') {
+            //If the type is a struct, iterate each member and calculate the member slot
+            //based on the baseSlot. If the type is mapping or struct recursively call the
+            // function that would check If any key is used with that slot
+            const baseCompleteType = symbols.storageTypes[mapping.completeType].base;
+            const baseCanonicalType = toCanonicalType(baseCompleteType);
+            if (!isDynamicType(baseCanonicalType)) {
+                return {ret: {}, hasValues: false}
+            }
+
+            const baseSize = toBN(symbols.storageTypes[baseCompleteType].numberOfBytes).div(toBN(32));
+            const arrSize = 10;
+            let currentSlot = sha3(hexToBytes(bnToSlot(toBN(0))));
+            let index = 0;
+            while (currentSlot.lte(mapping.baseSlot.add(arrSize))) {
+                const {ret: _ret, hasValues: _hasValues} = recFillMapping({
+                    type: baseCanonicalType,
+                    completeType: baseCompleteType,
+                    baseSlot: currentSlot
+                });
+                //If no keys were used in that member, dont add it
+                if (_hasValues) ret[index.toString()] = _ret;
+                hasValues = hasValues || _hasValues;
+
+                currentSlot = currentSlot.add(baseSize);
+                index++;
+            }
         } else {
-            throw Error("Unkown mapping type")
+            throw Error(`Unkown mapping type ${mapping.type}`)
         }
 
         return {ret, hasValues};

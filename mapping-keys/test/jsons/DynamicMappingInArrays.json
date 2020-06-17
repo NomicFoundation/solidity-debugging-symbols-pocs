@@ -1,0 +1,117 @@
+{
+  "contractName": "DynamicMappingInArrays",
+  "tests": [
+    {
+      "before": [
+        {
+          "method": "pushOptionalMappings",
+          "params": ["0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076", 4]
+        }
+      ],
+      "method": "accessFirstMap",
+      "params": ["0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076", 2,  "myKey"],
+      "result": {
+        "dynamicArrayWithStructs": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": { "2": {
+          "firstMap" : { "myKey":  true}
+        } } }
+      },
+      "description": "Accesing first map in an struct in a dynamic array of mappings"
+    },
+    {
+      "before": [
+        {
+          "method": "pushOptionalMappings",
+          "params": ["0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076", 4]
+        }
+      ],
+      "method": "accessSecondMap",
+      "params": ["0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076", 0,  "yourKey"],
+      "result": {
+        "dynamicArrayWithStructs": { "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076": { "0": {
+          "secondMap" : { "yourKey":  true}
+        } } }
+      },
+      "description": "Accesing second map in an struct in a dynamic array of mappings"
+    },
+    {
+      "before": [
+        {
+          "method": "pushComplexStructs",
+          "params": [1337, 6]
+        }
+      ],
+      "method": "accessMappingsInComplexArray",
+      "params": [1337, 2,  "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076"],
+      "result": {
+        "complexStructs": { "1337": { "maps": { "2" : {
+          "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076" : true
+        } } } }
+      },
+      "description": "Accesing a fixed array inside a struct"
+    },
+    {
+      "before": [
+        {
+          "method": "pushComplexStructs",
+          "params": [73, 6]
+        }
+      ],
+      "method": "accessMappingsInStructArray",
+      "params": [73, 1, true, "wololo"],
+      "result": {
+        "complexStructs": { "73": { "structs": { "1" : {
+          "firstMap": { "wololo" : true }
+        } } } }
+      },
+      "description": "Accesing a map in a dynamic array inside a struct"
+    },
+    {
+      "before": [
+        {
+          "method": "pushIntoRootArrayFixed",
+          "params": [10]
+        }
+      ],
+      "method": "accessRootArrayMappingFixed",
+      "params": [2, 4, false, "wasabi"],
+      "result": {
+        "rootArrayFixed": { "2": { "fix": { "4" : {
+          "secondMap": { "wasabi" : true }
+        } } } }
+      },
+      "description": "Accesing a dynamic array of structs with mappings"
+    },
+    {
+      "before": [
+        {
+          "method": "pushIntoRootArrayFixed",
+          "params": [10]
+        }
+      ],
+      "method": "accessRootArrayMappingFixed",
+      "params": [2, 4, false, "wasabi"],
+      "result": {
+        "rootArrayFixed": { "2": { "fix": { "4" : {
+          "secondMap": { "wasabi" : true }
+        } } } }
+      },
+      "description": "Accesing a dynamic array of structs with mappings"
+    },
+    {
+      "before": [
+        {
+          "method": "pushIntoRootArrayDynamic",
+          "params": [10]
+        }
+      ],
+      "method": "accessRootArrayMappingDynamic",
+      "params": [1, 3, true, "wasabi2"],
+      "result": {
+        "rootArrayDynamic": { "1": { "fix": { "3" : {
+          "firstMap": { "wasabi2" : true }
+        } } } }
+      },
+      "description": "Accesing a dynamic array of structs with dinamyc arrays inside (NOT SUPPORTED)"
+    }
+  ]
+}

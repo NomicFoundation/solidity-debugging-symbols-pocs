@@ -27,7 +27,7 @@ contract StructOnState {
         address[] addresses;
         bytes8 randomValue4;
         bytes7 randomValue5;
-        mapping(string => uint) dinamicKeyMapping;
+        mapping(string => uint) dynamicKeyMapping;
     }
 
     mapping(uint=> uint) normalMap;
@@ -59,8 +59,8 @@ contract StructOnState {
         return randomStruct.mapToAddress[id];
     }
 
-    function accessDinamicKey(string calldata key) external view returns(uint) {
-        return randomStruct.dinamicKeyMapping[key];
+    function accessDynamicKey(string calldata key) external view returns(uint) {
+        return randomStruct.dynamicKeyMapping[key];
     }
 
     function accessAllMaps(uint id, uint mapToId, string calldata key) external view returns(uint) {
@@ -68,7 +68,7 @@ contract StructOnState {
         uint b = randomStruct.secondStructId.mapToId[mapToId];
         uint c = randomStruct.manyStructIds[id].mapToId[mapToId];
         uint d = randomStruct.nestedMapOfAddress[id][msg.sender];
-        uint e = randomStruct.dinamicKeyMapping[key];
+        uint e = randomStruct.dynamicKeyMapping[key];
         return a + b + c + d + e;
     }
 
