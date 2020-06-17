@@ -111,7 +111,7 @@
           "firstMap": { "wasabi2" : true }
         } } } }
       },
-      "description": "Accesing a dynamic array of structs with dinamyc arrays inside (NOT SUPPORTED)"
+      "description": "Accesing a dynamic array of structs with dinamyc arrays inside"
     }
   ]
 }

@@ -33,49 +33,20 @@ function readMemory(memory, pointer, size) {
     return "0x" + value_array.join("");
 }
 
-// Retrieve label of a root variable
-function getRootLabel(slot, symbols) {
-    const slotBN = toBN(slot);
+function getRootMappingInfo(symbols) {
+    const ans = {};
     for (const symbol of symbols.storageLayout) {
-        if(toCanonicalType(symbol.type) === 'dynamic array') {
-            const baseCompleteType = symbols.storageTypes[symbol.type].base;
-            const baseSize = toBN(symbols.storageTypes[baseCompleteType].numberOfBytes).div(toBN(32));
-            const arrSize = toBN(10).mul(baseSize);
-            const baseSlot = toBN(sha3(hexToBytes(bnToSlot(toBN(symbol.slot)))));
-            if (baseSlot.lte(slotBN) && toBN(baseSlot).add(arrSize).gt(slotBN)) {
-                //This is a root mapping
-                return symbol.label;
-            }
-        } else {
-
-            const slots = toBN(symbols.storageTypes[symbol.type].numberOfBytes).div(toBN(32));
-            if (toBN(symbol.slot).lte(slotBN) && toBN(symbol.slot).add(slots).gt(slotBN)) {
-                //This is a root mapping
-                return symbol.label;
+        const type = toCanonicalType(symbol.type);
+        if(isDynamicType(type)) {
+            ans[symbol.label] = {
+                type,
+                completeType: symbol.type,
+                baseSlot: toBN(symbol.slot)
             }
         }
     }
 
-    //Not a root variable
-    return undefined;
-}
-
-//Creates the initial information for root mappings and structs
-function createRootInfo(label, symbols) {
-    for (const symbol of symbols.storageLayout) {
-        if(symbol.label === label) {
-            const type = toCanonicalType(symbol.type);
-            if(isDynamicType(type)) {
-                return {
-                    type,
-                    completeType: symbol.type,
-                    baseSlot: toBN(symbol.slot)
-                }
-            } else {
-                throw Error(`Unidentified root varible ${label}: ${type}`);
-            }
-        }
-    }
+    return ans;
 }
 
 function toCanonicalType(type) {
@@ -177,7 +148,7 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
     }
 
     const number_of_steps = await tracer.getLength();
-    const rootMappingInfo = {};
+    const rootMappingInfo = getRootMappingInfo(symbols);
     const slots = {};
     for (let step = 0; step < number_of_steps; step++) {
         const pc = await tracer.getCurrentPC(step);
@@ -201,12 +172,6 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
             //All slots queried with keys are saved
             if (!slots[slot]) slots[slot] = {};
             slots[slot][key] = resultingSlot;
-
-            //RootMappingInfo works as a starting point to know which mappings where used.
-            const rootLabel = getRootLabel(slot, symbols);
-            if(rootLabel && !rootMappingInfo[rootLabel]) {
-                rootMappingInfo[rootLabel] = createRootInfo(rootLabel, symbols);
-            }
         }
     }
 
@@ -282,7 +247,7 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
             }
             let index = 0;
             let baseArrSlot = toBN(currentSlot);
-            while(currentSlot.lte(baseArrSlot.add(arrSize))) {
+            while(currentSlot.lt(baseArrSlot.add(arrSize))) {
                 const {ret: _ret, hasValues: _hasValues} = recFillMapping({
                     type: baseCanonicalType,
                     completeType: baseCompleteType,
@@ -306,7 +271,7 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
             }
 
             const baseSize = toBN(symbols.storageTypes[baseCompleteType].numberOfBytes).div(toBN(32));
-            const arrSize = 10;
+            const arrSize = toBN(10).mul(baseSize);
             let currentSlot = sha3(hexToBytes(bnToSlot(toBN(0))));
             let index = 0;
             while (currentSlot.lte(mapping.baseSlot.add(arrSize))) {
@@ -339,7 +304,9 @@ async function retrieveKeysInTrace(tx, symbols, tracer, deployedBytecode = true)
     };
 
     let mappingResult = Object.keys(rootMappingInfo).reduce((o, m) => {
-        o[m] = recFillMapping(rootMappingInfo[m]);
+        const {ret: _ret, hasValues: _hasValues} = recFillMapping(rootMappingInfo[m]);
+        //If no keys were used in that member, dont add it
+        if (_hasValues) o[m] = _ret;
         return o;
     }, {});
 
