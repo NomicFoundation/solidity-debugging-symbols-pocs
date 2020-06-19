@@ -88,9 +88,6 @@ function matchOffsetToLine(fileOffsetByLine, location, lines) {
 async function retrieveLiveVariablesInTrace(trace, symbols, bytecodeRangesByLine, deployedBytecode = true) {
     const symbolsByOffset = {};
     for (const symbol of symbols.variables) {
-        // const test = Object.freeze(symbol);
-        // symbol.rawr = "lel";
-        // test.rawr = "lel";
         const bytecodeOffset = deployedBytecode ? symbol.deployedBytecodeOffset : symbol.bytecodeOffset;
         if (!symbolsByOffset[bytecodeOffset]) symbolsByOffset[bytecodeOffset] = [];
         symbolsByOffset[bytecodeOffset].push(symbol);
@@ -103,7 +100,7 @@ async function retrieveLiveVariablesInTrace(trace, symbols, bytecodeRangesByLine
         // We need to find the first step that executes an instruction outside the bytecode range to ensure the relevant variable is initialized.
         const variablesValueByIteration = await Promise.all(variablesByIteration.map((liveVariables) => readVariableValues(trace, liveVariables, bytecodeRange)));
         // console.log(`Live variables in line ${line}: ${util.inspect(variablesValueByIteration, { depth: 5 })}`);
-        liveVariablesInTrace[line] = variablesValueByIteration;
+        liveVariablesInTrace[line] = variablesValueByIteration.map(it => it.map(v => ({value: v.value, label: v.symbol.label})));
     }
 
     return liveVariablesInTrace;

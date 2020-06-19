@@ -1,4 +1,4 @@
-const { compile, compileSourceMap } = require("../lib/compiler_with_symbols");
+const { compile } = require("../lib/compiler_with_symbols");
 const { createTracer, traceTransaction } = require("../lib/tracer");
 const {
   retrieveLiveVariablesInTrace,
@@ -38,22 +38,39 @@ testDefinitions.forEach( testDefinition => {
     before(async () => {
       Contract = artifacts.require(testDefinition.contractName);
       symbols = await compile(contractPath);
-      // FIXME: remove this when the instrumentation is present in the standard json or outputs source maps too.
-      // Compilations need to happen separately to avoid data races in the instrumentation output.
-      Object.assign(symbols, await compileSourceMap(contractPath));
-      // console.log("Symbols: " + util.inspect(symbols, { depth: 6 }));
       Contract.bytecode = symbols.bytecode;
       tracer = createTracer(web3);
-
       fileOffsetByLine = await mapLinesToFileOffsets(contractPath);
-      runtimeDecodedInstructions = decodeInstructions(symbols["bin-runtime"], symbols["srcmap-runtime"]);
-      // console.log("Decoded runtime instructions: " + util.inspect(runtimeDecodedInstructions, { depth: 6 }));
+      runtimeDecodedInstructions = decodeInstructions(symbols.bytecodeRuntime, symbols.srcmapRuntime);
       constructorDecodedInstructions = decodeInstructions(symbols.bytecode, symbols.srcmap);
-      // console.log("Decoded constructor instructions: " + util.inspect(constructorDecodedInstructions, { depth: 6 }));
     });
 
-    // TODO: define test logic
+    testDefinition.constructorTests && testDefinition.constructorTests.map(unitTest => {
+      if(unitTest.skip) return;
+
+      it(unitTest.description, async() => {
+        const contract = await Contract.new(...unitTest.params);
+        const tx = {hash: contract.transactionHash, to: contract.address};
+        const usedKeys = await retrieveKeysInTrace(tx, symbols, tracer, false);
+        assertHasExactKeys(usedKeys, unitTest.result)
+      });
+
+      it(unitTest.description, async () => {
+        const contract = await Contract.new(...unitTest.params);
+        const tx = {hash: contract.transactionHash, to: contract.address};
+        await traceTransaction(tracer, tx);
+
+        const lines = Object.keys(unitTest.result);
+        const constructorBytecodeOffsetsByLine = translateLineToBytecodeOffsets(constructorDecodedInstructions, fileOffsetByLine, lines);
+        const variables = await retrieveLiveVariablesInTrace(tracer, symbols, constructorBytecodeOffsetsByLine);
+        assert.deepEqual(variables, unitTest.result);
+      });
+
+    });
+
     testDefinition.tests && testDefinition.tests.map(unitTest => {
+      if(unitTest.skip) return;
+
       it(unitTest.description, async () => {
         const params = unitTest.constructorParams || [];
         const contract = await Contract.new(...params);
@@ -64,33 +81,12 @@ testDefinitions.forEach( testDefinition => {
         const tx = {hash: result.tx, to: contract.address};
         await traceTransaction(tracer, tx);
 
-        const lines = Object.keys(unitTest.tests);
+        const lines = Object.keys(unitTest.result);
         const runtimeBytecodeOffsetsByLine = translateLineToBytecodeOffsets(runtimeDecodedInstructions, fileOffsetByLine, lines);
-        // console.log("Runtime bytecode offsets by line: " + util.inspect(runtimeBytecodeOffsetsByLine, { depth: 6 }));
-
-        // const constructorBytecodeOffsetsByLine = translateLineToBytecodeOffsets(constructorDecodedInstructions, fileOffsetByLine, lines);
-        // console.log("Constructor bytecode offsets by line: " + util.inspect(runtimeBytecodeOffsetsByLine, { depth: 6 }));
-
-        // This checks that the variables defined in the test are found in the trace.
-        // TODO: Check that the variables found in the trace are all defined in the test. I.e. both sets should be equal.
         const variables = await retrieveLiveVariablesInTrace(tracer, symbols, runtimeBytecodeOffsetsByLine);
-        for (const [line, test] of Object.entries(unitTest.tests)) {
-          const lineVariables = variables[line];
-          for (const [index, iterationTest] of test.entries()) {
-            const variable = getLatestMatchingVariable(lineVariables[index], iterationTest.label);
-            assert.isDefined(variable, `Couldn't find a variable labeled ${iterationTest.label}`);
-            assert.equal(iterationTest.value, variable.value);
-          }
-        }
+        assert.deepEqual(variables, unitTest.result);
+
       });
     });
   });
 });
-
-
-function getLatestMatchingVariable(iterationVariables, label) {
-  const index = iterationVariables.map((variable) => {
-    return variable.symbol.label;
-  }).lastIndexOf(label);
-  return iterationVariables[index];
-}
