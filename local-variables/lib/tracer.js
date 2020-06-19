@@ -26,6 +26,8 @@ function createTracer(web3) {
 async function traceTransaction(tracer, tx) {
     const success = await tracer.resolveTrace(tx);
     if (!success) throw new Error("Tracing unsuccessful?");
+    // The trace was successfully retrieved and analysed.
+    // The analysis can be queried through the TraceManager API.
 }
 
 module.exports = {
