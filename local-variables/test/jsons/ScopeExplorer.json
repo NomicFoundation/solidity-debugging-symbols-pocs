@@ -5,7 +5,8 @@
       "method": "declareElementaryVariable",
       "params": [],
       "result": {
-        "11": [ [ { "label": "aVariable", "value": "10" } ] ]
+        "11": [ [ { "label": "aVariable", "value": "10" } ] ],
+        "12": [ [ { "label": "aVariable", "value": "10" }, { "label": "anotherVariable", "value": "a ten" } ] ]
       },
       "description": "Call function that declares a simple uint256 variable."
     }

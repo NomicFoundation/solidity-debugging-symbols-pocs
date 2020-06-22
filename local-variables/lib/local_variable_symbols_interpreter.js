@@ -1,38 +1,8 @@
 const {toBN} = web3.utils;
 const util = require("util");
-const coder = require("@ethersproject/abi").defaultAbiCoder;
 const { decodeInstructions: buidlerEVMDecodeInstructions } = require("../node_modules/@nomiclabs/buidler/internal/buidler-evm/stack-traces/source-maps");
+const { readValue } = require("./decoder");
 const fs = require('fs').promises;
-
-function readMemory(memory, pointer, size) {
-    const value_array = [];
-    for (let i = pointer * 2n; i < (pointer + size) * 2n; i++) {
-        value_array.push(memory[i]);
-    }
-    return "0x" + value_array.join("");
-}
-
-function toCanonicalType(type) {
-    if (type.startsWith("t_")) {
-        type = type.replace("t_", "");
-    }
-
-    if (type.startsWith("string")) return "string";
-    if (type.startsWith("struct")) return "struct";
-    if (type.startsWith("mapping")) return "mapping";
-    if (type.startsWith("enum")) return "enum";
-    if (type.startsWith("array")) return "array";
-    return type;
-}
-
-function decodeValue(value, valueType) {
-    const type = toCanonicalType(valueType);
-    if (type === 'string') {
-        return web3.utils.toAscii(value);
-    } else {
-        return coder.decode([toCanonicalType(valueType)], value).toString();
-    }
-}
 
 function decodeInstructions(bytecode, sourceMap) {
     const bytecodeBuffer = Buffer.from(bytecode.replace("0x", ""), "hex");
@@ -167,17 +137,12 @@ async function readVariableValues(trace, variables, bytecodeRange) {
 
     // The top of the stack is at the first element.
     const stack = await trace.getStackAt(finalStep);
+    const memoryBlocks = await trace.getMemoryAt(finalStep);
+    const memory = memoryBlocks.join("");
+    const state = { stack, memory };
     // console.log(`Stack in final step: ${util.inspect(stack, { depth: 5 })}`);
     // TODO: read variable values and decode them.
-    return variables.liveVariables.map((variable) => {
-        const type = toCanonicalType(variable.symbol.typeName);
-        // default location seems to be the stack?
-        if (variable.symbol.location == "default") {
-            return { ...variable, value: decodeValue("0x" + stack[stack.length - 1 - variable.stackPointer], type) };
-        } else {
-            throw new Error(`Unknown location ${variable.symbol.location}`);
-        }
-    });
+    return Promise.all(variables.liveVariables.map((variable) => readValue(state, variable)));
 }
 
 function isPush(opcode) {
