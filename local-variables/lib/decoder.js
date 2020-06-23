@@ -65,6 +65,8 @@ function getMemoryPointerAndLength(state, symbol, variablePointer) {
             dataPointer: variablePointer + symbolLength,
             length: BigInt(readMemory(state.memory, variablePointer, symbolLength))
         };
+    } else {
+        throw new Error(`Unsupported encoding ${symbol.encoding}`);
     }
 }
 
