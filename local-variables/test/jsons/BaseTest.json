@@ -34,6 +34,15 @@
 
       },
       "description": "Creating variables in a function"
+    },
+    {
+      "constructorParams": [15, "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce"],
+      "method": "declareStaticArrayVariable",
+      "params": [],
+      "result": {
+        "29": [ { "anArray": [ "4", "9", "14" ] } ]
+      },
+      "description": "Call function that declares a static array of uint256."
     }
   ]
 }

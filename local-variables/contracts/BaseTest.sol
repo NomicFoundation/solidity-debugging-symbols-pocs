@@ -23,4 +23,9 @@ contract BaseTest {
         string memory anotherVariable = "a ten";
         return (aVariable, anotherVariable);
     }
+
+    function declareStaticArrayVariable() public pure returns (uint256[3] memory) {
+        uint256[3] memory anArray = [ uint256(4), uint256(9), uint256(14) ];
+        return anArray;
+    }
 }
