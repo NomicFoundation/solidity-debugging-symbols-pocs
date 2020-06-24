@@ -29,7 +29,8 @@
         "20": [ {  } ],
         "21": [ { "aVariable": "10" } ],
         "22": [ { "aVariable": "10", "bVariable": "14" } ],
-        "23": [ { "aVariable": "10", "bVariable": "14", "cVariable": "19" } ]
+        "23": [ { "aVariable": "10", "bVariable": "14", "cVariable": "19" } ],
+        "24": [ { "aVariable": "10", "bVariable": "14", "cVariable": "19", "anotherVariable": "a ten" } ]
 
       },
       "description": "Creating variables in a function"
