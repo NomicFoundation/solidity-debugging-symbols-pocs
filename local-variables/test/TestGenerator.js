@@ -2,7 +2,7 @@ const { compile } = require("../lib/compiler_with_symbols");
 const { createTracer, traceTransaction } = require("../lib/tracer");
 const {
   retrieveLiveVariablesInTrace,
-  translateLineToBytecodeOffsets,
+  instructionsByLine,
   mapLinesToFileOffsets,
   decodeInstructions
 } = require("../lib/local_variable_symbols_interpreter");
@@ -48,21 +48,14 @@ testDefinitions.forEach( testDefinition => {
     testDefinition.constructorTests && testDefinition.constructorTests.map(unitTest => {
       if(unitTest.skip) return;
 
-      it(unitTest.description, async() => {
-        const contract = await Contract.new(...unitTest.params);
-        const tx = {hash: contract.transactionHash, to: contract.address};
-        const usedKeys = await retrieveKeysInTrace(tx, symbols, tracer, false);
-        assertHasExactKeys(usedKeys, unitTest.result)
-      });
-
       it(unitTest.description, async () => {
         const contract = await Contract.new(...unitTest.params);
         const tx = {hash: contract.transactionHash, to: contract.address};
         await traceTransaction(tracer, tx);
 
         const lines = Object.keys(unitTest.result);
-        const constructorBytecodeOffsetsByLine = translateLineToBytecodeOffsets(constructorDecodedInstructions, fileOffsetByLine, lines);
-        const variables = await retrieveLiveVariablesInTrace(tracer, symbols, constructorBytecodeOffsetsByLine);
+        const instructionsByLineMap = instructionsByLine(lines, constructorDecodedInstructions, fileOffsetByLine);
+        const variables = await retrieveLiveVariablesInTrace(tracer, symbols, instructionsByLineMap, false);
         assert.deepEqual(variables, unitTest.result);
       });
 
@@ -82,8 +75,8 @@ testDefinitions.forEach( testDefinition => {
         await traceTransaction(tracer, tx);
 
         const lines = Object.keys(unitTest.result);
-        const runtimeBytecodeOffsetsByLine = translateLineToBytecodeOffsets(runtimeDecodedInstructions, fileOffsetByLine, lines);
-        const variables = await retrieveLiveVariablesInTrace(tracer, symbols, runtimeBytecodeOffsetsByLine);
+        const instructionsByLineMap = instructionsByLine(lines, runtimeDecodedInstructions, fileOffsetByLine);
+        const variables = await retrieveLiveVariablesInTrace(tracer, symbols, instructionsByLineMap);
         assert.deepEqual(variables, unitTest.result);
 
       });

@@ -1,6 +1,5 @@
-const {toBN} = web3.utils;
-const util = require("util");
 const { decodeInstructions: buidlerEVMDecodeInstructions } = require("../node_modules/@nomiclabs/buidler/internal/buidler-evm/stack-traces/source-maps");
+const coder = require("@ethersproject/abi").defaultAbiCoder;
 const { readValue } = require("./decoder");
 const fs = require('fs').promises;
 
@@ -11,9 +10,7 @@ function decodeInstructions(bytecode, sourceMap) {
 
 async function mapLinesToFileOffsets(filePath) {
     const file = await fs.readFile(filePath, 'utf8');
-    // console.log("File: " + util.inspect(file, { depth: 6 }));
     const lines = file.split('\n');
-    // console.log("Lines: " + util.inspect(lines, { depth: 6 }));
     let sum = 0;
     const fileOffsetByLine = [];
     for (const line of lines) {
@@ -21,41 +18,31 @@ async function mapLinesToFileOffsets(filePath) {
         fileOffsetByLine.push({ start: sum, end: sum + line.length + 1 });
         sum += line.length + 1;
     }
-    // console.log("File offsets: " + util.inspect(fileOffsetByLine, { depth: 6 }));
     return fileOffsetByLine;
 }
 
 /* Returns line -> bytecode offsets dictionary. The lists of instructions are ordered by program counter.
  */
-function translateLineToBytecodeOffsets(decodedInstructions, fileOffsetByLine, lines) {
-    const bytecodeOffsetsByLine = {};
-    for (const instruction of decodedInstructions) {
-        const location = instruction.location;
-        if (location) {
-            const line = matchOffsetToLine(fileOffsetByLine, instruction.location, lines);
-            if (line !== null) {
-                if (!bytecodeOffsetsByLine[line]) bytecodeOffsetsByLine[line] = [];
-                bytecodeOffsetsByLine[line].push(instruction);
+function instructionsByLine(lines, decodedInstructions, fileOffsetByLine) {
+    const instructionsByLineMap = {};
+    for (const line of lines) {
+        instructionsByLineMap[line] = [];
+        for (const instruction of decodedInstructions) {
+            if (instruction.location) {
+                const {start, end} = fileOffsetByLine[line - 1];
+                if (start <= instruction.location.offset && instruction.location.offset <= end) {
+                    instructionsByLineMap[line].push(instruction);
+                }
             }
         }
-    };
-
-    return bytecodeOffsetsByLine;
-}
-
-function matchOffsetToLine(fileOffsetByLine, location, lines) {
-    for (const line of lines) {
-        const { start, end } = fileOffsetByLine[line - 1];
-        if (start <= location.offset && location.offset < end) {
-            return line;
-        }
     }
-    return null;
+
+    return instructionsByLineMap;
 }
 
 /*
  */
-async function retrieveLiveVariablesInTrace(trace, symbols, bytecodeRangesByLine, deployedBytecode = true) {
+async function retrieveLiveVariablesInTrace(trace, symbols, instructionsByLine, deployedBytecode = true) {
     const symbolsByOffset = {};
     for (const symbol of symbols.variables) {
         const bytecodeOffset = deployedBytecode ? symbol.deployedBytecodeOffset : symbol.bytecodeOffset;
@@ -64,13 +51,11 @@ async function retrieveLiveVariablesInTrace(trace, symbols, bytecodeRangesByLine
     }
 
     const liveVariablesInTrace = {};
-    for (const [line, bytecodeRange] of Object.entries(bytecodeRangesByLine)) {
-        const stopBytecodeOffset = bytecodeRange[0].pc;
+    for (const [line, instructions] of Object.entries(instructionsByLine)) {
+        const stopBytecodeOffset = instructions[0].pc;
         const variablesByIteration = await traceLiveVariablesStackLocations(trace, stopBytecodeOffset, symbolsByOffset);
-        // We need to find the first step that executes an instruction outside the bytecode range to ensure the relevant variable is initialized.
-        const variablesValueByIteration = await Promise.all(variablesByIteration.map((liveVariables) => readVariableValues(trace, liveVariables, bytecodeRange)));
-        // console.log(`Live variables in line ${line}: ${util.inspect(variablesValueByIteration, { depth: 5 })}`);
-        liveVariablesInTrace[line] = variablesValueByIteration.map(it => it.map(v => ({value: v.value, label: v.symbol.label})));
+        const variablesValueByIteration = await Promise.all(variablesByIteration.map((liveVariables) => readVariableValues(trace, liveVariables, instructions)));
+        liveVariablesInTrace[line] = variablesValueByIteration.map(it => it.reduce((o,v) => Object.assign(o, {[v.symbol.label]: v.value}), {}));
     }
 
     return liveVariablesInTrace;
@@ -92,14 +77,14 @@ async function traceLiveVariablesStackLocations(trace, stopBytecodeOffset, symbo
             return variable.stackPointer < stack.length;
         });
 
-        if (offsetSymbols) {
-            if (!isPush(trace.tracer.trace[step].op)) {
-                // FIXME: this probably breaks with variable symbols for function parameters.
-                throw new Error(`Found a variable where there is no push instruction! Opcode: ${trace.tracer.trace[step].op}`);
-            }
-            // console.log("Found at least one variable!");
-            // console.log(util.inspect(trace.tracer.trace[step]));
+        if (pc === stopBytecodeOffset) {
+            liveVariablesByIteration.push({
+                liveVariables: liveVariables.slice(),
+                step
+            });
+        }
 
+        if (offsetSymbols) {
             for (const symbol of offsetSymbols) {
                 // console.log(`Found variable ${symbol.label}`);
                 // This position should use a common frame of reference: the bottom of the stack.
@@ -111,31 +96,12 @@ async function traceLiveVariablesStackLocations(trace, stopBytecodeOffset, symbo
                 });
             }
         }
-
-        if (pc == stopBytecodeOffset) {
-            liveVariablesByIteration.push({
-                liveVariables: liveVariables.slice(),
-                step
-            });
-        }
     }
     return liveVariablesByIteration;
 }
 
 async function readVariableValues(trace, variables, bytecodeRange) {
-    const numberOfSteps = await trace.getLength();
-    // TODO: what if we get a discontiguous bytecode range? That case could warrant a deeper look.
     let finalStep = variables.step;
-    for (; finalStep < numberOfSteps; finalStep++) {
-        const pc = await trace.getCurrentPC(finalStep);
-        if (bytecodeRange.every((instruction) => {
-            return instruction.pc != pc;
-        })) {
-            break;
-        }
-    }
-
-    // The top of the stack is at the first element.
     const stack = await trace.getStackAt(finalStep);
     const memoryBlocks = await trace.getMemoryAt(finalStep);
     const memory = memoryBlocks.join("");
@@ -151,7 +117,7 @@ function isPush(opcode) {
 
 module.exports = {
     retrieveLiveVariablesInTrace,
-    translateLineToBytecodeOffsets,
+    instructionsByLine,
     mapLinesToFileOffsets,
     decodeInstructions
 };

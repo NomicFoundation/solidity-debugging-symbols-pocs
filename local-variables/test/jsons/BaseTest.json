@@ -1,0 +1,38 @@
+{
+  "contractName": "BaseTest",
+  "constructorTests": [
+     {
+      "params": [15, "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce"],
+      "result": {
+        "10": [ { "myVar": "15", "theOwner": "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce" } ],
+        "11": [ { "myVar": "15", "theOwner": "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce", "changingVar": "1" } ],
+        "16": [ { "myVar": "15", "theOwner": "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce", "changingVar": "1500" } ]
+      },
+      "description": "Basic constructor 1"
+    },
+    {
+      "params": [4, "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076"],
+      "result": {
+        "10": [ { "myVar": "4", "theOwner": "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076" } ],
+        "11": [ { "myVar": "4", "theOwner": "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076", "changingVar": "1" } ],
+        "16": [ { "myVar": "4", "theOwner": "0x5dCfDe9Cc85f0152bc2ef851EE8D635e045e6076", "changingVar": "2" } ]
+      },
+      "description": "Basic constructor 2"
+    }
+  ],
+  "tests": [
+    {
+      "constructorParams": [15, "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce"],
+      "method": "declareElementaryVariable",
+      "params": [],
+      "result": {
+        "20": [ {  } ],
+        "21": [ { "aVariable": "10" } ],
+        "22": [ { "aVariable": "10", "bVariable": "14" } ],
+        "23": [ { "aVariable": "10", "bVariable": "14", "cVariable": "19" } ]
+
+      },
+      "description": "Creating variables in a function"
+    }
+  ]
+}
