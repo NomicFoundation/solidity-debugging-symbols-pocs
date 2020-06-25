@@ -28,4 +28,14 @@ contract BaseTest {
         uint256[3] memory anArray = [ uint256(4), uint256(9), uint256(14) ];
         return anArray;
     }
+
+    struct ExampleStruct {
+        uint256 id;
+        uint256 someProperty;
+    }
+
+    function declareMemoryStruct() public pure returns (uint256) {
+        ExampleStruct memory aStruct = ExampleStruct(1, 7475);
+        return aStruct.someProperty;
+    }
 }

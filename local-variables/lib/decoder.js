@@ -1,5 +1,7 @@
 const coder = require("@ethersproject/abi").defaultAbiCoder;
 
+const uint256Size = 32;
+const uint256InHexSize = uint256Size * 2;
 
 function readMemory(memory, pointer, size) {
     const value_array = [];
@@ -26,18 +28,26 @@ function decodeValue(value, symbol) {
     const type = toCanonicalType(symbol.typeName);
     if (type === 'string') {
         return web3.utils.toAscii(value);
-    } if (type === 'array') {
+    } else if (type === 'array') {
         //FIXME: add decoding of arrays
         const baseType = toCanonicalType(symbol.base);
         if (baseType != "uint256") throw new Error(`Unsupported array type ${symbol.typeName}`);
         const decodedArray = [];
-        const uint256InHexSize = 32 * 2;
         value = value.replace("0x", "");
         for (let i = 0; i < value.length; i += uint256InHexSize) {
             const element = "0x" + value.slice(i, i + uint256InHexSize);
             decodedArray.push(coder.decode([baseType], element).toString());
         }
         return decodedArray;
+    } else if (type == 'struct') {
+        const struct = {};
+        for (const memberSymbol of symbol.members) {
+            const byteOffsetInHex = (memberSymbol.slot * uint256Size + memberSymbol.offset) * 2 + 2;
+            const sizeInHex = getSize(memberSymbol) * 2;
+            const element = "0x" + value.slice(byteOffsetInHex, byteOffsetInHex + sizeInHex);
+            struct[memberSymbol.label] = coder.decode([toCanonicalType(memberSymbol.type)], element).toString();
+        }
+        return struct;
     } else {
         return coder.decode([type], value).toString();
     }
@@ -51,6 +61,9 @@ function readValue(state, variable) {
     if (variable.symbol.location == "default") {
         return { ...variable, value: decodeValue(stackValue, variable.symbol) };
     } else if (variable.symbol.location == "memory") {
+        // To reliably decode values located in memory, the compiler needs to add their type information
+        // to the type dictionary. This is currently only done for types in the storage layout.
+        // Thus, we only support simple memory types here.
         const variablePointer = BigInt(stackValue);
         const { dataPointer, length } = getMemoryPointerAndLength(state, variable.symbol, variablePointer);
         const value = readMemory(memory, dataPointer, length);
@@ -78,6 +91,14 @@ function getMemoryPointerAndLength(state, symbol, variablePointer) {
         };
     } else {
         throw new Error(`Unsupported encoding ${symbol.encoding}`);
+    }
+}
+
+function getSize(symbol) {
+    if (toCanonicalType(symbol.type) == "uint256") {
+        return uint256Size;
+    } else {
+        throw new Error(`Unsupported type ${symbol.type}`);
     }
 }
 

@@ -43,6 +43,15 @@
         "29": [ { "anArray": [ "4", "9", "14" ] } ]
       },
       "description": "Call function that declares a static array of uint256."
+    },
+    {
+      "constructorParams": [15, "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce"],
+      "method": "declareMemoryStruct",
+      "params": [],
+      "result": {
+        "39": [ { "aStruct": { "id": "1", "someProperty": "7475" } } ]
+      },
+      "description": "Call function that declares a struct in memory."
     }
   ]
 }
