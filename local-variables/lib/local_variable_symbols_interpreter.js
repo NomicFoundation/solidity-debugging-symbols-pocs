@@ -105,7 +105,8 @@ async function readVariableValues(trace, variables, bytecodeRange) {
     const stack = await trace.getStackAt(finalStep);
     const memoryBlocks = await trace.getMemoryAt(finalStep);
     const memory = memoryBlocks.join("");
-    const state = { stack, memory };
+    const calldata = (await trace.getCallDataAt(finalStep))[0].replace("0x", "");
+    const state = { stack, memory, calldata };
     // console.log(`Stack in final step: ${util.inspect(stack, { depth: 5 })}`);
     // TODO: read variable values and decode them.
     return Promise.all(variables.liveVariables.map((variable) => readValue(state, variable)));

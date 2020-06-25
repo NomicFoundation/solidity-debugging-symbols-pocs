@@ -55,8 +55,9 @@ function decodeValue(value, symbol) {
 
 function readValue(state, variable) {
     // The top of the stack is at the first element.
-    const { stack, memory } = state;
-    const stackValue = "0x" + stack[stack.length - 1 - variable.stackPointer];
+    const { stack, memory, calldata } = state;
+    const stackIndex = stack.length - 1 - variable.stackPointer;
+    const stackValue = "0x" + stack[stackIndex];
     // default location seems to be the stack?
     if (variable.symbol.location == "default") {
         return { ...variable, value: decodeValue(stackValue, variable.symbol) };
@@ -69,6 +70,11 @@ function readValue(state, variable) {
         const value = readMemory(memory, dataPointer, length);
         const decodedValue = decodeValue(value, variable.symbol);
         return { ...variable, value: decodedValue };
+    } else if (variable.symbol.location == "calldata") {
+        // The length of the calldata retrieved is in the slot above the calldata pointer.
+        const length = BigInt("0x" + stack[stackIndex - 1]);
+        const value = readMemory(calldata, BigInt(stackValue), length);
+        return { ...variable, value: decodeValue(value, variable.symbol) };
     } else {
         throw new Error(`Unknown location ${variable.symbol.location}`);
     }

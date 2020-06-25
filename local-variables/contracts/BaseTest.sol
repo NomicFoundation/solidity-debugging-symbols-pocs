@@ -38,4 +38,8 @@ contract BaseTest {
         ExampleStruct memory aStruct = ExampleStruct(1, 7475);
         return aStruct.someProperty;
     }
+
+    function inspectCalldata(string calldata aString) external pure returns (string memory) {
+        return aString;
+    }
 }

@@ -52,6 +52,15 @@
         "39": [ { "aStruct": { "id": "1", "someProperty": "7475" } } ]
       },
       "description": "Call function that declares a struct in memory."
+    },
+    {
+      "constructorParams": [15, "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce"],
+      "method": "inspectCalldata",
+      "params": ["to be inspected"],
+      "result": {
+        "43": [ { "aString": "to be inspected" } ]
+      },
+      "description": "Call function that declares a simple uint256 variable."
     }
   ]
 }

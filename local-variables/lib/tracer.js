@@ -13,12 +13,15 @@ function createTracer(web3) {
     const getStackAt = bareGetStackAt.bind(tracer);
     const bareGetMemoryAt = util.promisify(tracer.getMemoryAt);
     const getMemoryAt = bareGetMemoryAt.bind(tracer);
+    const bareGetCallDataAt = util.promisify(tracer.getCallDataAt);
+    const getCallDataAt = bareGetCallDataAt.bind(tracer);
     return {
         tracer,
         resolveTrace,
         getLength,
         getCurrentPC,
         getStackAt,
+        getCallDataAt,
         getMemoryAt
     }
 }
