@@ -50,11 +50,18 @@ async function retrieveLiveVariablesInTrace(trace, symbols, instructionsByLine, 
         symbolsByOffset[bytecodeOffset].push(symbol);
     }
 
+    const symbolsByEndOffset = {};
+    for (const symbol of symbols.variables) {
+        const bytecodeEndOffset = deployedBytecode ? symbol.endDeployedBytecodeOffset : symbol.endBytecodeOffset;
+        if (!symbolsByEndOffset[bytecodeEndOffset]) symbolsByEndOffset[bytecodeEndOffset] = [];
+        symbolsByEndOffset[bytecodeEndOffset].push(symbol);
+    }
+
     const liveVariablesInTrace = {};
     for (const [line, instructions] of Object.entries(instructionsByLine)) {
         const stopBytecodeOffset = instructions[0].pc;
-        const variablesByIteration = await traceLiveVariablesStackLocations(trace, stopBytecodeOffset, symbolsByOffset);
-        const variablesValueByIteration = await Promise.all(variablesByIteration.map((liveVariables) => readVariableValues(trace, liveVariables, instructions)));
+        const variablesByIteration = await traceLiveVariablesStackLocations(trace, stopBytecodeOffset, symbolsByOffset, symbolsByEndOffset);
+        const variablesValueByIteration = await Promise.all(variablesByIteration.map((liveVariables) => readVariableValues(trace, liveVariables)));
         liveVariablesInTrace[line] = variablesValueByIteration.map(it => it.reduce((o,v) => Object.assign(o, {[v.symbol.label]: v.value}), {}));
     }
 
@@ -62,7 +69,7 @@ async function retrieveLiveVariablesInTrace(trace, symbols, instructionsByLine, 
 }
 
 // TODO: restrict liveVariables to a certain scope.
-async function traceLiveVariablesStackLocations(trace, stopBytecodeOffset, symbolsByOffset) {
+async function traceLiveVariablesStackLocations(trace, stopBytecodeOffset, symbolsByOffset, symbolsByEndOffset) {
     const numberOfSteps = await trace.getLength();
     const liveVariablesByIteration = [];
     let liveVariables = [];
@@ -70,12 +77,35 @@ async function traceLiveVariablesStackLocations(trace, stopBytecodeOffset, symbo
     for (; step < numberOfSteps; step++) {
         const pc = await trace.getCurrentPC(step);
         const offsetSymbols = symbolsByOffset[pc];
+        const endOffsetSymbols = symbolsByEndOffset[pc];
         const stack = await trace.getStackAt(step);
 
-        // FIXME: This should use the end of scope markers too.
+
+        if(endOffsetSymbols) {
+            liveVariables = liveVariables.filter((variable) => {
+              return !endOffsetSymbols.map(s => s.id).includes(variable.symbol.id);
+            });
+        }
+
         liveVariables = liveVariables.filter((variable) => {
+            if(variable.stackPointer >= stack.length) {
+                // This sometimes happens due to optimizations
+                // console.error(`Variable ${variable.symbol.label} was poped but never released in the debug symbols`)
+            }
             return variable.stackPointer < stack.length;
         });
+
+        if (offsetSymbols) {
+            for (const symbol of offsetSymbols) {
+                if(symbol.stackOffset > 0) {
+                    const stackPointer = stack.length - symbol.stackOffset;
+                    liveVariables.push({
+                        stackPointer,
+                        symbol
+                    });
+                }
+            }
+        }
 
         if (pc === stopBytecodeOffset) {
             liveVariablesByIteration.push({
@@ -86,21 +116,19 @@ async function traceLiveVariablesStackLocations(trace, stopBytecodeOffset, symbo
 
         if (offsetSymbols) {
             for (const symbol of offsetSymbols) {
-                // console.log(`Found variable ${symbol.label}`);
-                // This position should use a common frame of reference: the bottom of the stack.
-                // Since this is a push instruction, its position is outside the current stack.
-                const stackPointer = stack.length - symbol.stackOffset;
-                liveVariables.push({
-                    stackPointer,
-                    symbol
-                });
+                if(symbol.stackOffset === 0) {
+                    liveVariables.push({
+                        stackPointer: stack.length,
+                        symbol
+                    });
+                }
             }
         }
     }
     return liveVariablesByIteration;
 }
 
-async function readVariableValues(trace, variables, bytecodeRange) {
+async function readVariableValues(trace, variables) {
     let finalStep = variables.step;
     const stack = await trace.getStackAt(finalStep);
     const memoryBlocks = await trace.getMemoryAt(finalStep);

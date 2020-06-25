@@ -64,6 +64,8 @@ async function compile(path) {
     const variables = JSON.parse(variablesJson).map(v => {
         v.bytecodeOffset = variablesOffsets[v.id].bytecodeOffset;
         v.deployedBytecodeOffset = variablesOffsets[v.id].deployedBytecodeOffset;
+        v.endBytecodeOffset = variablesOffsets[v.id].endBytecodeOffset;
+        v.endDeployedBytecodeOffset = variablesOffsets[v.id].endDeployedBytecodeOffset;
         return v;
     });
 

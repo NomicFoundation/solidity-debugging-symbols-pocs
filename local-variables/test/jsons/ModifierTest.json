@@ -1,0 +1,14 @@
+{
+  "contractName": "ModifierTest",
+  "tests": [
+    {
+      "method": "someRandomFun",
+      "params": [15],
+      "result": {
+        "15": [ { "newVar": "15" } ],
+        "11": [ { "modifierVar": "10" } ]
+      },
+      "description": "A modifier with one replacement"
+    }
+  ]
+}

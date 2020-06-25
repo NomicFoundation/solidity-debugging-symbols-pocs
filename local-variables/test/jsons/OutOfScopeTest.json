@@ -1,0 +1,19 @@
+{
+  "contractName": "OutOfScopeTest",
+  "tests": [
+    {
+      "method": "someRandomFun",
+      "params": [],
+      "result": {
+        "7": [ {  } ],
+        "8": [ { "myVar1": "10" } ],
+        "10": [ { "myVar1": "10", "myVar2": "20" } ],
+        "11": [ { "myVar1": "30", "myVar2": "20" } ],
+        "12": [ { "myVar1": "30", "myVar2": "20", "localVar": "40" } ],
+        "14": [ { "myVar1": "10", "myVar2": "50" } ]
+
+      },
+      "description": "Inside a single execution of a for loop"
+    }
+  ]
+}

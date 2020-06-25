@@ -3,10 +3,10 @@ pragma solidity ^0.6.7;
 
 contract BaseTest {
 
-    event Start(); event End();
+    event End();
 
     constructor(uint myVar, address theOwner) public {
-        emit Start();
+
         uint changingVar = 1;
         if(msg.sender == theOwner) {
             changingVar = myVar / 2;

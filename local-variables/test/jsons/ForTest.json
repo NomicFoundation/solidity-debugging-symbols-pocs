@@ -1,0 +1,32 @@
+{
+  "contractName": "ForTest",
+  "tests": [
+    {
+      "method": "multiply",
+      "params": [1, 10],
+      "result": {
+        "7": [ { "times": "1", "add": "10" } ],
+        "8": [ { "times": "1", "add": "10", "counter": "0" } ],
+        "9": [ { "times": "1", "add": "10", "counter": "0", "i": "0" } ],
+        "11": [ { "times": "1", "add": "10", "counter": "10" } ]
+
+      },
+      "description": "Inside a single execution of a for loop"
+    },
+    {
+      "method": "multiply",
+      "params": [3, 10],
+      "result": {
+        "7": [ { "times": "3", "add": "10" } ],
+        "8": [ { "times": "3", "add": "10", "counter": "0" } ],
+        "9": [ { "times": "3", "add": "10", "counter": "0", "i": "0" },
+               { "times": "3", "add": "10", "counter": "10", "i": "1" },
+               { "times": "3", "add": "10", "counter": "20", "i": "2" }
+        ],
+        "11": [ { "times": "3", "add": "10", "counter": "30" } ]
+
+      },
+      "description": "Inside a multiple execution of a for loop"
+    }
+  ]
+}
