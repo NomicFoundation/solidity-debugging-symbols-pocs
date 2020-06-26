@@ -29,4 +29,21 @@ contract FunctionCallTest {
         arr[index] = value;
         return arr;
     }
+
+    function callDataArray(uint[3] calldata calldataArr) external pure returns(uint) {
+        uint[3] memory memoryArry = calldataArr;
+        memoryArry[2] = 5;
+        bool areEqual = checkEquality(calldataArr, memoryArry);
+        return areEqual ? 1 : 0;
+    }
+
+    function checkEquality(uint[3] memory arr1, uint[3] memory arr2) private pure returns(bool) {
+        for(uint i=0; i<3; i++) {
+            if(arr1[i] != arr2[i]) {
+                return false;
+            }
+            arr1[i] = 0;
+        }
+        return true;
+    }
 }

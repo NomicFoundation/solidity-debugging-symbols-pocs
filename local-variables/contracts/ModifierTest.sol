@@ -32,4 +32,15 @@ contract ModifierTest {
         }
         return value;
     }
+
+    modifier memoryArray(uint[3] memory modArray) {
+        modArray[1] = 20;
+        modArray[2] = 30;
+        _;
+    }
+
+    function receiveArray(uint[3] memory funcArray) public memoryArray(funcArray) returns (uint256) {
+        uint rValue = funcArray[0] + funcArray[1] + funcArray[2];
+        return rValue;
+    }
 }

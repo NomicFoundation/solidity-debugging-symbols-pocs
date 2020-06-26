@@ -26,6 +26,23 @@
                     "newArray": ["1337","1337","1337","1337","10001"] } ]
       },
       "description": "Changing an array in another function"
+    },
+    {
+      "only": true,
+      "method": "callDataArray",
+      "params": [[77, 88, 99]],
+      "result": {
+        "34":  [ { "calldataArr": ["77", "88", "99"] } ],
+        "35":  [ { "calldataArr": ["77", "88", "99"], "memoryArry": ["77", "88", "99"] } ],
+        "36":  [ { "calldataArr": ["77", "88", "99"], "memoryArry": ["77", "88", "5"] } ],
+        "41":  [ { "arr1": ["77", "88", "99"], "arr2": ["77", "88", "5"] } ],
+        "42":  [ { "arr1": ["77", "88", "99"], "arr2": ["77", "88", "5"], "i": "0" },
+                 { "arr1": ["0", "88", "99"], "arr2": ["77", "88", "5"], "i": "1" },
+                 { "arr1": ["0", "0", "99"], "arr2": ["77", "88", "5"], "i": "2" }
+        ],
+        "37":  [ { "calldataArr": ["77", "88", "99"], "memoryArry": ["77", "88", "5"], "areEqual": "false" } ]
+      },
+      "description": "Changing an array in another function"
     }
   ]
 }

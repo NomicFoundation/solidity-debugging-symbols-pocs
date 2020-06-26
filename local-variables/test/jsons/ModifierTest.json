@@ -9,6 +9,17 @@
         "11": [ { "modifierVar": "10" } ]
       },
       "description": "A modifier with one replacement"
+    },
+    {
+      "method": "receiveArray",
+      "params": [[1,2,3]],
+      "result": {
+        "37": [ { "modArray": ["1", "2", "3"], "funcArray": ["1", "2", "3"] } ],
+        "38": [ { "modArray": ["1", "20", "3"], "funcArray": ["1", "20", "3"] } ],
+        "43": [ { "funcArray": ["1", "20", "30"], "modArray": ["1", "20", "30"] } ],
+        "44": [ { "rValue": "51", "funcArray": ["1", "20", "30"], "modArray": ["1", "20", "30"] } ]
+      },
+      "description": "A modifier with one replacement"
     }
   ]
 }

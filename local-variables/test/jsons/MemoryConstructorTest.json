@@ -1,0 +1,13 @@
+{
+  "contractName": "MemoryConstructorTest",
+  "constructorTests": [
+     {
+      "params": ["someString", [11,22,33]],
+      "result": {
+        "13": [ { "myStr": "someString", "array": ["11", "22", "33"] } ],
+        "14": [ { "myStr": "someString", "array": ["11", "1337", "33"] } ]
+      },
+      "description": "Constructor with memory pointers"
+    }
+  ]
+}
