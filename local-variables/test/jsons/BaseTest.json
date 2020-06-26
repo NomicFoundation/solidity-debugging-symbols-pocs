@@ -60,7 +60,16 @@
       "result": {
         "43": [ { "aString": "to be inspected" } ]
       },
-      "description": "Call function that declares a simple uint256 variable."
+      "description": "Call function that has a string calldata parameter."
+    },
+    {
+      "constructorParams": [15, "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce"],
+      "method": "inspectCalldataArray",
+      "params": [ [ "6", "3", "5", "10", "4" ] ],
+      "result": {
+        "47": [ { "anArray": [ "6", "3", "5", "10", "4" ] } ]
+      },
+      "description": "Call function that has an array calldata parameter."
     }
   ]
 }

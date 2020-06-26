@@ -29,13 +29,15 @@ function decodeValue(value, symbol) {
     if (type === 'string') {
         return web3.utils.toAscii(value);
     } else if (type === 'array') {
-        //FIXME: add decoding of arrays
+        //FIXME: add decoding of complex arrays
         const baseType = toCanonicalType(symbol.base);
-        if (baseType != "uint256") throw new Error(`Unsupported array type ${symbol.typeName}`);
+        if (!baseType.startsWith("uint")) throw new Error(`Unsupported array type ${symbol.typeName}`);
         const decodedArray = [];
+        // Array elements get padded to word size.
+        const sizeInHex = uint256InHexSize;
         value = value.replace("0x", "");
-        for (let i = 0; i < value.length; i += uint256InHexSize) {
-            const element = "0x" + value.slice(i, i + uint256InHexSize);
+        for (let i = 0; i < value.length; i += sizeInHex) {
+            const element = "0x" + value.slice(i, i + sizeInHex);
             decodedArray.push(coder.decode([baseType], element).toString());
         }
         return decodedArray;
@@ -72,14 +74,16 @@ function readValue(state, variable) {
         return { ...variable, value: decodedValue };
     } else if (variable.symbol.location == "calldata") {
         // The length of the calldata retrieved is in the slot above the calldata pointer.
-        const length = BigInt("0x" + stack[stackIndex - 1]);
-        const value = readMemory(calldata, BigInt(stackValue), length);
+        const calldataPointer = BigInt(stackValue);
+        const { dataPointer, length } = getCallDataPointerAndLength(calldata, variable.symbol, calldataPointer);
+        const value = readMemory(calldata, dataPointer, length);
         return { ...variable, value: decodeValue(value, variable.symbol) };
     } else {
         throw new Error(`Unknown location ${variable.symbol.location}`);
     }
 }
 
+// TODO: This should probably be merged with getCallDataPointerAndLength but we want to play it safe for now.
 function getMemoryPointerAndLength(state, symbol, variablePointer) {
     if (symbol.location != "memory") throw new Error(`Unsupported location ${symbol.location}`);
     const symbolLength = BigInt(symbol.numberOfBytes);
@@ -92,9 +96,36 @@ function getMemoryPointerAndLength(state, symbol, variablePointer) {
     } else if (symbol.encoding == "bytes") {
         // We need to read the length in the machine memory.
         return {
-            dataPointer: variablePointer + symbolLength,
-            length: BigInt(readMemory(state.memory, variablePointer, symbolLength))
+            dataPointer: variablePointer + BigInt(uint256Size),
+            length: BigInt(readMemory(state.memory, variablePointer, BigInt(uint256Size)))
         };
+    } else {
+        throw new Error(`Unsupported encoding ${symbol.encoding}`);
+    }
+}
+
+function getCallDataPointerAndLength(calldata, symbol, variablePointer) {
+    if (symbol.location != "calldata") throw new Error(`Unsupported location ${symbol.location}`);
+    const symbolLength = BigInt(symbol.numberOfBytes);
+    /*if (symbol.encoding == "inplace") {
+        // The length is given in the symbols.
+        return {
+            dataPointer: variablePointer,
+            length: symbolLength
+        };
+    } else*/ if (symbol.encoding == "bytes") {
+        // We need to read the length in the machine memory.
+        return {
+            dataPointer: variablePointer,
+            length: BigInt(readMemory(calldata, variablePointer - BigInt(uint256Size), BigInt(uint256Size)))
+        };
+    } else if (symbol.encoding == "dynamic_array") {
+        const numberOfElements = BigInt(readMemory(calldata, variablePointer - BigInt(uint256Size), BigInt(uint256Size)));
+        const length = numberOfElements * symbolLength;
+        return {
+            dataPointer: variablePointer,
+            length
+        }
     } else {
         throw new Error(`Unsupported encoding ${symbol.encoding}`);
     }

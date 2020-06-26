@@ -42,4 +42,8 @@ contract BaseTest {
     function inspectCalldata(string calldata aString) external pure returns (string memory) {
         return aString;
     }
+
+    function inspectCalldataArray(uint256[] calldata anArray) external pure returns (uint256[] memory) {
+        return anArray;
+    }
 }
