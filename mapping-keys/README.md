@@ -7,7 +7,7 @@ This project works as a first draft implementation of debugging symbols in solid
 The compiler will output a json object with the following metadata:
  * `storageLayout`: The variables extracted from the `--storage-layout` flag in solidity
  * `storageTypes`: The types extracted from the `--storage-layout` flag in solidity
- * `mappings`: The positions in the bytecode in which a `SHA3` is present that is used to calculate the slot for a key in a mapping
+ * `mappings`: The positions in the bytecode in which a `SHA3` instruction is present that is used to calculate the slot for a key in a mapping
  
  Example:
 ```$json
@@ -25,9 +25,9 @@ The compiler will output a json object with the following metadata:
 
 ## Tests
 
-To run the tests, run `npx buidler test` on this directory. Tests are generated out of the json files in `test/jsons`
+To run the tests, run `npx buidler test` in this directory. Tests are generated out of the json files in `test/jsons`.
 
-####Test layout
+### Test layout
 ```$json
 {
   "contractName": "myContract",
@@ -69,7 +69,7 @@ To run the tests, run `npx buidler test` on this directory. Tests are generated 
 ```
 Each test is a `JSON` object with `contractName` as the file and name on the contract located in `contracts`.
 An array of `constructorTests` and another array of `tests`. Each test will call a method and expect a `result`.
-The result must contains all they keys used in the transaction in the respective mappings. If a mapping is located inside a struct, the result will nest all the structs fields.
+The result must contain all they keys used in the transaction in the respective mappings. If a mapping is located inside a struct, the result will nest all the struct fields.
 
 ```$json
 result: {
@@ -81,4 +81,4 @@ result: {
 }
 ```
 
-Flags `only` and `skip` are available to cherrypick with tests to run.
+Flags `only` and `skip` are available to cherrypick which tests to run.
