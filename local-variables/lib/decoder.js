@@ -107,13 +107,13 @@ function getMemoryPointerAndLength(state, symbol, variablePointer) {
 function getCallDataPointerAndLength(calldata, symbol, variablePointer) {
     if (symbol.location != "calldata") throw new Error(`Unsupported location ${symbol.location}`);
     const symbolLength = BigInt(symbol.numberOfBytes);
-    /*if (symbol.encoding == "inplace") {
+    if (symbol.encoding == "inplace") {
         // The length is given in the symbols.
         return {
             dataPointer: variablePointer,
             length: symbolLength
         };
-    } else*/ if (symbol.encoding == "bytes") {
+    } else if (symbol.encoding == "bytes") {
         // We need to read the length in the machine memory.
         return {
             dataPointer: variablePointer,
