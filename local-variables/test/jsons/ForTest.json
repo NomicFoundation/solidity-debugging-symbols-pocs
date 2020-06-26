@@ -27,6 +27,21 @@
 
       },
       "description": "Inside a multiple execution of a for loop"
+    },
+    {
+      "method": "fillArray",
+      "params": [3, 53],
+      "result": {
+        "15": [ { "times": "3", "set": "53" } ],
+        "16": [ { "times": "3", "set": "53", "array": [ "0", "0", "0", "0", "0"] } ],
+        "17": [ { "times": "3", "set": "53", "array": [ "0", "0", "0", "0", "0"], "i": "0" },
+          { "times": "3", "set": "53", "array": [ "53", "0", "0", "0", "0"], "i": "1" },
+          { "times": "3", "set": "53", "array": [ "53", "53", "0", "0", "0"], "i": "2" }
+        ],
+        "19": [ { "times": "3", "set": "53", "array": [ "53", "53", "53", "0", "0"] } ]
+
+      },
+      "description": "Changing an array in memory"
     }
   ]
 }

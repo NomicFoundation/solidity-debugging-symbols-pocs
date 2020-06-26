@@ -1,0 +1,31 @@
+{
+  "contractName": "FunctionCallTest",
+  "tests": [
+    {
+      "method": "firstFunction",
+      "params": [5],
+      "result": {
+        "7":  [ { "var1": "5" } ],
+        "8":  [ { "var1": "5", "myVariable": "1" } ],
+        "13": [ { "requiredVar": "5" } ],
+        "14": [ { "requiredVar": "5", "result": "11" } ],
+        "19": [ { "requiredVar": "5", "result": "6" } ],
+        "9":  [ { "var1": "5", "myVariable": "1", "resultVariable": "6" } ]
+      },
+      "description": "Variables tracked thru function calls"
+    },
+    {
+      "method": "passArray",
+      "params": [1337,4,10001],
+      "result": {
+        "23":  [ { "number": "1337", "indexSet": "4", "toChange": "10001" } ],
+        "24":  [ { "number": "1337", "indexSet": "4", "toChange": "10001", "arrayToGive": ["1337","1337","1337","1337","1337"] } ],
+        "29":  [ { "index": "4", "value": "10001", "arr": ["1337","1337","1337","1337","1337"] } ],
+        "30":  [ { "index": "4", "value": "10001", "arr": ["1337","1337","1337","1337","10001"] } ],
+        "25":  [ { "number": "1337", "indexSet": "4", "toChange": "10001", "arrayToGive": ["1337","1337","1337","1337","10001"],
+                    "newArray": ["1337","1337","1337","1337","10001"] } ]
+      },
+      "description": "Changing an array in another function"
+    }
+  ]
+}

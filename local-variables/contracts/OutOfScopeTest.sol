@@ -13,4 +13,22 @@ contract OutOfScopeTest {
         }
         return myVar2;
     }
+
+    function conditionArray(bool over3, uint index, uint number) public pure returns (uint256) {
+        uint[5] memory arr;
+        if(over3) {
+            uint[5] memory values = [uint(0), uint(0), uint(0), uint(0), uint(0)];
+            for(uint i=0; i<index; i++) {
+                values[i] = number;
+            }
+            arr = values;
+        } else {
+            uint[5] memory under3 = [uint(0), uint(0), uint(0), uint(0), uint(0)];
+            for(uint i=0; i<3; i++) {
+                under3[i] = number + index;
+            }
+            arr = under3;
+        }
+        return arr[4];
+    }
 }

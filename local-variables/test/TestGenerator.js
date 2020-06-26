@@ -61,7 +61,7 @@ testDefinitions.forEach( testDefinition => {
 
         const lines = Object.keys(unitTest.result);
         const instructionsByLineMap = instructionsByLine(lines, constructorDecodedInstructions, fileOffsetByLine);
-        const variables = await retrieveLiveVariablesInTrace(tracer, symbols, instructionsByLineMap, false);
+        const variables = await retrieveLiveVariablesInTrace(tracer, symbols, constructorDecodedInstructions, instructionsByLineMap, false);
         assert.deepEqual(variables, unitTest.result);
       });
 
@@ -84,7 +84,7 @@ testDefinitions.forEach( testDefinition => {
 
         const lines = Object.keys(unitTest.result);
         const instructionsByLineMap = instructionsByLine(lines, runtimeDecodedInstructions, fileOffsetByLine);
-        const variables = await retrieveLiveVariablesInTrace(tracer, symbols, instructionsByLineMap);
+        const variables = await retrieveLiveVariablesInTrace(tracer, symbols, runtimeDecodedInstructions, instructionsByLineMap);
         assert.deepEqual(variables, unitTest.result);
 
       });

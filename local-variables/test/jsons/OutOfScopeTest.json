@@ -13,7 +13,31 @@
         "14": [ { "myVar1": "10", "myVar2": "50" } ]
 
       },
-      "description": "Inside a single execution of a for loop"
+      "description": "Inside a scope block"
+    },
+    {
+      "method": "conditionArray",
+      "params": [true, 4, 77],
+      "result": {
+        "18": [ { "over3":  "true", "index":  "4", "number": "77" } ],
+        "19": [ { "over3":  "true", "index":  "4", "number": "77", "arr": ["0","0","0","0","0"] } ],
+        "21": [ { "over3":  "true", "index":  "4", "number": "77", "arr": ["0","0","0","0","0"], "values": ["0","0","0","0","0"] } ],
+        "24": [ { "over3":  "true", "index":  "4", "number": "77", "arr": ["0","0","0","0","0"], "values": ["77","77","77","77","0"] } ],
+        "32": [ { "over3":  "true", "index":  "4", "number": "77", "arr": ["77","77","77","77","0"] } ]
+      },
+      "description": "If block with memory arrays 1"
+    },
+    {
+      "method": "conditionArray",
+      "params": [false, 100, 100],
+      "result": {
+        "18": [ { "over3":  "false", "index":  "100", "number": "100" } ],
+        "19": [ { "over3":  "false", "index":  "100", "number": "100", "arr": ["0","0","0","0","0"] } ],
+        "27": [ { "over3":  "false", "index":  "100", "number": "100", "arr": ["0","0","0","0","0"], "under3": ["0","0","0","0","0"] } ],
+        "30": [ { "over3":  "false", "index":  "100", "number": "100", "arr": ["0","0","0","0","0"], "under3": ["200","200","200","0","0"] } ],
+        "32": [ { "over3":  "false", "index":  "100", "number": "100", "arr": ["200","200","200","0","0"] } ]
+      },
+      "description": "If block with memory arrays 2"
     }
   ]
 }
