@@ -28,7 +28,6 @@
       "description": "Changing an array in another function"
     },
     {
-      "only": true,
       "method": "callDataArray",
       "params": [[77, 88, 99]],
       "result": {

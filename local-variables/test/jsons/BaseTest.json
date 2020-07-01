@@ -70,6 +70,24 @@
         "47": [ { "anArray": [ "6", "3", "5", "10", "4" ] } ]
       },
       "description": "Call function that has an array calldata parameter."
+    },
+    {
+      "constructorParams": [15, "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce"],
+      "method": "inspectStoragePointerToNumbers",
+      "params": [],
+      "result": {
+        "54": [ { "aPointerToNumbers": [] } ]
+      },
+      "description": "Call function that has an array storage pointer."
+    },
+    {
+      "constructorParams": [15, "0x25213E8E0964a98A017Ebbf36c633eFd006fe2ce"],
+      "method": "pushToStoragePointerToNumbers",
+      "params": [ 14 ],
+      "result": {
+        "60": [ { "aNumber": "14", "aPointerToNumbers": [ "14" ] } ]
+      },
+      "description": "Call function that modifies an array through a storage pointer."
     }
   ]
 }

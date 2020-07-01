@@ -72,15 +72,13 @@ async function retrieveLiveVariablesInTrace(trace, symbols, decodedInstructions,
 async function traceLiveVariablesStackLocations(trace, decodedInstructions, stopBytecodeOffset, symbolsByOffset, symbolsByEndOffset) {
     const numberOfSteps = await trace.getLength();
     const liveVariablesByIteration = [];
-    let liveVariablesArray = [[]];
-    let step = 0;
-    for (; step < numberOfSteps; step++) {
+    const liveVariablesArray = [[]];
+    for (let step = 0; step < numberOfSteps; step++) {
         const pc = await trace.getCurrentPC(step);
         const instruction = decodedInstructions.find(i => i.pc === pc);
         const offsetSymbols = symbolsByOffset[pc];
         const endOffsetSymbols = symbolsByEndOffset[pc];
         const stack = await trace.getStackAt(step);
-
 
         if(endOffsetSymbols) {
             liveVariablesArray[liveVariablesArray.length -1] = liveVariablesArray[liveVariablesArray.length -1].filter((variable) => {
@@ -143,10 +141,14 @@ async function readVariableValues(trace, variables) {
     const memoryBlocks = await trace.getMemoryAt(finalStep);
     const memory = memoryBlocks.join("");
     const calldata = (await trace.getCallDataAt(finalStep))[0].replace("0x", "");
-    const state = { stack, memory, calldata };
+    // FIXME: Here we assume, once again, that we are looking at a single call frame the entire time.
+    const currentAddress = await trace.getCurrentCalledAddressAt(finalStep);
+    const storageChanges = await trace.getStorageAt(finalStep, currentAddress);
+    const state = { stack, memory, calldata, storageChanges };
+    const readStorageSlot = (slot) => web3.eth.getStorageAt(currentAddress, slot);
     // console.log(`Stack in final step: ${util.inspect(stack, { depth: 5 })}`);
     // TODO: read variable values and decode them.
-    return Promise.all(variables.liveVariables.map((variable) => readValue(state, variable)));
+    return Promise.all(variables.liveVariables.map((variable) => readValue(state, variable, readStorageSlot)));
 }
 
 function isFunctionJump(instruction) {

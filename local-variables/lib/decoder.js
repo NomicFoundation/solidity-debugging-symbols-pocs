@@ -1,4 +1,5 @@
 const coder = require("@ethersproject/abi").defaultAbiCoder;
+const { toBN, sha3, hexToBytes } = web3.utils;
 
 const uint256Size = 32;
 const uint256InHexSize = uint256Size * 2;
@@ -7,6 +8,31 @@ function readMemory(memory, pointer, size) {
     const value_array = [];
     for (let i = pointer * 2n; i < (pointer + size) * 2n; i++) {
         value_array.push(memory[i]);
+    }
+    return "0x" + value_array.join("");
+}
+
+function padToWord(number) {
+    return toBN(number).toString(16, 64);
+}
+
+async function readStorage(storageChanges, readStorageSlot, pointer, size) {
+    if (size > 1000) {
+        console.warn("Beware, a large storage crawl was requested.");
+    }
+
+    const value_array = [];
+    for (let i = pointer; i < pointer + size; i++) {
+        const slot = "0x" + padToWord(i.toString(16));
+        let word
+        if (slot in storageChanges) {
+            word = storageChanges[slot].value;
+        }
+        else {
+            word = await readStorageSlot(slot);
+        }
+        const padded_word = padToWord(toBN(word));
+        value_array.push(padded_word);
     }
     return "0x" + value_array.join("");
 }
@@ -55,9 +81,9 @@ function decodeValue(value, symbol) {
     }
 }
 
-function readValue(state, variable) {
+async function readValue(state, variable, readStorageSlot) {
     // The top of the stack is at the first element.
-    const { stack, memory, calldata } = state;
+    const { stack, memory, calldata, storageChanges } = state;
     const stackIndex = stack.length - 1 - variable.stackPointer;
     const stackValue = "0x" + stack[stackIndex];
     // default location seems to be the stack?
@@ -77,6 +103,10 @@ function readValue(state, variable) {
         const calldataPointer = BigInt(stackValue);
         const { dataPointer, length } = getCallDataPointerAndLength(calldata, variable.symbol, calldataPointer);
         const value = readMemory(calldata, dataPointer, length);
+        return { ...variable, value: decodeValue(value, variable.symbol) };
+    } else if (variable.symbol.location == "storage") {
+        const { dataPointer, length } = await getStoragePointerAndLength(state, variable.symbol, stackValue, readStorageSlot);
+        const value = await readStorage(storageChanges, readStorageSlot, dataPointer, length);
         return { ...variable, value: decodeValue(value, variable.symbol) };
     } else {
         throw new Error(`Unknown location ${variable.symbol.location}`);
@@ -124,6 +154,35 @@ function getCallDataPointerAndLength(calldata, symbol, variablePointer) {
         const length = numberOfElements * symbolLength;
         return {
             dataPointer: variablePointer,
+            length
+        }
+    } else {
+        throw new Error(`Unsupported encoding ${symbol.encoding}`);
+    }
+}
+
+async function getStoragePointerAndLength(state, symbol, variablePointer, readStorageSlot) {
+    if (symbol.location != "storage") throw new Error(`Unsupported location ${symbol.location}`);
+    const symbolLength = BigInt(symbol.numberOfBytes);
+    /*if (symbol.encoding == "inplace") {
+        // The length is given in the symbols.
+        return {
+            dataPointer: variablePointer,
+            length: symbolLength
+        };
+    } else if (symbol.encoding == "bytes") {
+        // We need to read the length in the machine memory.
+        return {
+            dataPointer: variablePointer + BigInt(uint256Size),
+            length: BigInt(readMemory(state.memory, variablePointer, BigInt(uint256Size)))
+        };
+    } else*/ if (symbol.encoding == "dynamic_array") {
+        const lengthSlot = BigInt(sha3(hexToBytes(variablePointer)));
+        const numberOfElements = BigInt(await readStorage(state.storageChanges, readStorageSlot, lengthSlot, 1n));
+        const length = numberOfElements * (BigInt(getSize({ type: symbol.base })) / BigInt(uint256Size));
+        const slot = BigInt(sha3(hexToBytes("0x" + lengthSlot.toString(16))));
+        return {
+            dataPointer: slot,
             length
         }
     } else {

@@ -15,15 +15,24 @@ function createTracer(web3) {
     const getMemoryAt = bareGetMemoryAt.bind(tracer);
     const bareGetCallDataAt = util.promisify(tracer.getCallDataAt);
     const getCallDataAt = bareGetCallDataAt.bind(tracer);
+    const bareGetCurrentCalledAddressAt = util.promisify(tracer.getCurrentCalledAddressAt);
+    const getCurrentCalledAddressAt = bareGetCurrentCalledAddressAt.bind(tracer);
+    const bareAccumulateStorageChanges = util.promisify(tracer.accumulateStorageChanges);
+    const accumulateStorageChanges = bareAccumulateStorageChanges.bind(tracer);
+    // The step parameter may be relative to the step in which the call frame was created.
+    // We're testing with the first call frame for now.
+    const getStorageAt = (step, address) => accumulateStorageChanges(step, address, {});
     return {
         tracer,
         resolveTrace,
+        getCurrentCalledAddressAt,
         getLength,
         getCurrentPC,
         getStackAt,
         getCallDataAt,
+        getStorageAt,
         getMemoryAt
-    }
+    };
 }
 
 async function traceTransaction(tracer, tx) {
