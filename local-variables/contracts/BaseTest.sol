@@ -46,17 +46,4 @@ contract BaseTest {
     function inspectCalldataArray(uint256[] calldata anArray) external pure returns (uint256[] memory) {
         return anArray;
     }
-
-    uint256[] aStorageNumberArray;
-
-    function inspectStoragePointerToNumbers() public view returns (uint256) {
-        uint256[] storage aPointerToNumbers = aStorageNumberArray;
-        return aPointerToNumbers.length;
-    }
-
-    function pushToStoragePointerToNumbers(uint256 aNumber) public returns (uint256) {
-        uint256[] storage aPointerToNumbers = aStorageNumberArray;
-        aPointerToNumbers.push(aNumber);
-        return aPointerToNumbers.length;
-    }
 }

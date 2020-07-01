@@ -1,0 +1,41 @@
+{
+  "contractName": "StorageTest",
+  "tests": [
+    {
+      "constructorParams": [ 0, 0 ],
+      "method": "inspectStoragePointerToNumbers",
+      "params": [],
+      "result": {
+        "16": [ { "aPointerToNumbers": [] } ]
+      },
+      "description": "Call function that has an array storage pointer."
+    },
+    {
+      "constructorParams": [ 0, 0 ],
+      "method": "pushToStoragePointerToNumbers",
+      "params": [ 14 ],
+      "result": {
+        "22": [ { "aNumber": "14", "aPointerToNumbers": [ "14" ] } ]
+      },
+      "description": "Call function that modifies an array through a storage pointer."
+    },
+    {
+      "constructorParams": [ 4, 10 ],
+      "method": "inspectStoragePointerToNumbers",
+      "params": [],
+      "result": {
+        "16": [ { "aPointerToNumbers": [ "4", "4", "4", "4", "4", "4", "4", "4", "4", "4" ] } ]
+      },
+      "description": "Call function that has an array storage pointer."
+    },
+    {
+      "constructorParams": [ 4, 10 ],
+      "method": "pushToStoragePointerToNumbers",
+      "params": [ 14 ],
+      "result": {
+        "22": [ { "aNumber": "14", "aPointerToNumbers": [ "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "14" ] } ]
+      },
+      "description": "Call function that modifies an array through a storage pointer."
+    }
+  ]
+}

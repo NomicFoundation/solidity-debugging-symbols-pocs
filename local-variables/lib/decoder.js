@@ -16,7 +16,7 @@ function padToWord(number) {
     return toBN(number).toString(16, 64);
 }
 
-async function readStorage(storageChanges, readStorageSlot, pointer, size) {
+async function readStorage(readStorageSlot, pointer, size) {
     if (size > 1000) {
         console.warn("Beware, a large storage crawl was requested.");
     }
@@ -24,13 +24,7 @@ async function readStorage(storageChanges, readStorageSlot, pointer, size) {
     const value_array = [];
     for (let i = pointer; i < pointer + size; i++) {
         const slot = "0x" + padToWord(i.toString(16));
-        let word
-        if (slot in storageChanges) {
-            word = storageChanges[slot].value;
-        }
-        else {
-            word = await readStorageSlot(slot);
-        }
+        const word = await readStorageSlot(slot);
         const padded_word = padToWord(toBN(word));
         value_array.push(padded_word);
     }
@@ -83,7 +77,7 @@ function decodeValue(value, symbol) {
 
 async function readValue(state, variable, readStorageSlot) {
     // The top of the stack is at the first element.
-    const { stack, memory, calldata, storageChanges } = state;
+    const { stack, memory, calldata } = state;
     const stackIndex = stack.length - 1 - variable.stackPointer;
     const stackValue = "0x" + stack[stackIndex];
     // default location seems to be the stack?
@@ -105,8 +99,8 @@ async function readValue(state, variable, readStorageSlot) {
         const value = readMemory(calldata, dataPointer, length);
         return { ...variable, value: decodeValue(value, variable.symbol) };
     } else if (variable.symbol.location == "storage") {
-        const { dataPointer, length } = await getStoragePointerAndLength(state, variable.symbol, stackValue, readStorageSlot);
-        const value = await readStorage(storageChanges, readStorageSlot, dataPointer, length);
+        const { dataPointer, length } = await getStoragePointerAndLength(variable.symbol, stackValue, readStorageSlot);
+        const value = await readStorage(readStorageSlot, dataPointer, length);
         return { ...variable, value: decodeValue(value, variable.symbol) };
     } else {
         throw new Error(`Unknown location ${variable.symbol.location}`);
@@ -161,9 +155,9 @@ function getCallDataPointerAndLength(calldata, symbol, variablePointer) {
     }
 }
 
-async function getStoragePointerAndLength(state, symbol, variablePointer, readStorageSlot) {
+async function getStoragePointerAndLength(symbol, variablePointer, readStorageSlot) {
     if (symbol.location != "storage") throw new Error(`Unsupported location ${symbol.location}`);
-    const symbolLength = BigInt(symbol.numberOfBytes);
+    // const symbolLength = BigInt(symbol.numberOfBytes);
     /*if (symbol.encoding == "inplace") {
         // The length is given in the symbols.
         return {
@@ -177,14 +171,15 @@ async function getStoragePointerAndLength(state, symbol, variablePointer, readSt
             length: BigInt(readMemory(state.memory, variablePointer, BigInt(uint256Size)))
         };
     } else*/ if (symbol.encoding == "dynamic_array") {
-        const lengthSlot = BigInt(sha3(hexToBytes(variablePointer)));
-        const numberOfElements = BigInt(await readStorage(state.storageChanges, readStorageSlot, lengthSlot, 1n));
-        const length = numberOfElements * (BigInt(getSize({ type: symbol.base })) / BigInt(uint256Size));
-        const slot = BigInt(sha3(hexToBytes("0x" + lengthSlot.toString(16))));
+        const lengthSlot = BigInt(variablePointer);
+        const numberOfElements = BigInt(await readStorage(readStorageSlot, lengthSlot, 1n));
+        const elementWords = BigInt(getSize({ type: symbol.base })) / BigInt(uint256Size);
+        const length = numberOfElements * elementWords;
+        const arrayPointer = BigInt(sha3(hexToBytes("0x" + padToWord(lengthSlot.toString(16)))));
         return {
-            dataPointer: slot,
+            dataPointer: arrayPointer,
             length
-        }
+        };
     } else {
         throw new Error(`Unsupported encoding ${symbol.encoding}`);
     }

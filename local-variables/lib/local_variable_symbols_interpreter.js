@@ -144,8 +144,18 @@ async function readVariableValues(trace, variables) {
     // FIXME: Here we assume, once again, that we are looking at a single call frame the entire time.
     const currentAddress = await trace.getCurrentCalledAddressAt(finalStep);
     const storageChanges = await trace.getStorageAt(finalStep, currentAddress);
-    const state = { stack, memory, calldata, storageChanges };
-    const readStorageSlot = (slot) => web3.eth.getStorageAt(currentAddress, slot);
+    const state = { stack, memory, calldata };
+    const readStorageSlot = (slot) => {
+        // remix-lib stores slot and value pairs in a strange way: they are in a hashed slot => {slot, value} map.
+        const key = Object.keys(storageChanges).find((hashedSlot) => {
+            return slot == '0x' + storageChanges[hashedSlot].key;
+        });
+        if (key) {
+            return storageChanges[key].value;
+        } else {
+            return web3.eth.getStorageAt(currentAddress, slot);
+        }
+    };
     // console.log(`Stack in final step: ${util.inspect(stack, { depth: 5 })}`);
     // TODO: read variable values and decode them.
     return Promise.all(variables.liveVariables.map((variable) => readValue(state, variable, readStorageSlot)));
