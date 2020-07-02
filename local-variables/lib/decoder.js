@@ -160,14 +160,14 @@ function getCallDataPointerAndLength(calldata, symbol, variablePointer) {
 
 async function getStoragePointerAndLength(symbol, variablePointer, readStorageSlot) {
     if (symbol.location != "storage") throw new Error(`Unsupported location ${symbol.location}`);
-    // const symbolLength = BigInt(symbol.numberOfBytes);
-    /*if (symbol.encoding == "inplace") {
+    const symbolLength = BigInt(symbol.numberOfBytes);
+    if (symbol.encoding == "inplace") {
         // The length is given in the symbols.
         return {
-            dataPointer: variablePointer,
+            dataPointer: BigInt(variablePointer),
             length: symbolLength
         };
-    } else*/ if (symbol.encoding == "bytes") {
+    } else if (symbol.encoding == "bytes") {
         const lengthSlot = BigInt(variablePointer);
         const slotValue = BigInt(await readStorage(readStorageSlot, lengthSlot, wordSize));
         // The bytes encoding in the storage uses the lowest order bit to encode two different representations:

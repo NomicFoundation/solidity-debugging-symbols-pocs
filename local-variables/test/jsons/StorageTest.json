@@ -8,7 +8,7 @@
       "result": {
         "16": [ { "aPointerToNumbers": [] } ]
       },
-      "description": "Call function that has an array storage pointer."
+      "description": "Observe a pointer to an empty array storage."
     },
     {
       "constructorParams": [ 0, 0 ],
@@ -17,7 +17,7 @@
       "result": {
         "22": [ { "aNumber": "14", "aPointerToNumbers": [ "14" ] } ]
       },
-      "description": "Call function that modifies an array through a storage pointer."
+      "description": "Modify an empty array through a storage pointer."
     },
     {
       "constructorParams": [ 4, 10 ],
@@ -26,7 +26,7 @@
       "result": {
         "16": [ { "aPointerToNumbers": [ "4", "4", "4", "4", "4", "4", "4", "4", "4", "4" ] } ]
       },
-      "description": "Call function that has an array storage pointer."
+      "description": "Observe a pointer to a non-empty array storage."
     },
     {
       "constructorParams": [ 4, 10 ],
@@ -35,7 +35,7 @@
       "result": {
         "22": [ { "aNumber": "14", "aPointerToNumbers": [ "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "14" ] } ]
       },
-      "description": "Call function that modifies an array through a storage pointer."
+      "description": "Modify a non-empty array through a storage pointer."
     },
     {
       "constructorParams": [ 0, 0 ],
@@ -44,7 +44,7 @@
       "result": {
         "30": [ { "someString": "some string" } ]
       },
-      "description": "Call function that has a string storage pointer."
+      "description": "Observe a string storage pointer."
     },
     {
       "constructorParams": [ 0, 0 ],
@@ -54,7 +54,16 @@
       "result": {
         "35": [ { "someString": "some string that goes over the 31 byte threshold" } ]
       },
-      "description": "Call function that has a long string storage pointer."
+      "description": "Observe a long string storage pointer."
+    },
+    {
+      "constructorParams": [ 0, 0 ],
+      "method": "readAStoragePointerToStaticArray",
+      "params": [],
+      "result": {
+        "44": [ { "someNumbers": [ "1", "2", "3" ] } ]
+      },
+      "description": "Observe a storage pointer to a static array of uint256."
     }
   ]
 }

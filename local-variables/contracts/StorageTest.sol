@@ -36,4 +36,11 @@ contract StorageTest {
     // }
     // FIXME: uncommenting the state variable aLongStringTag seems to break
     // either the instrumentation for local variable symbols or the source map for the contract.
+
+    uint256[3] aStaticArray = [ 1, 2, 3 ];
+
+    function readAStoragePointerToStaticArray() public view returns (uint256) {
+        uint256[3] storage someNumbers = aStaticArray;
+        return aStaticArray.length;
+    }
 }
