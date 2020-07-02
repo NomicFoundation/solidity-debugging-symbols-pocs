@@ -36,6 +36,25 @@
         "22": [ { "aNumber": "14", "aPointerToNumbers": [ "4", "4", "4", "4", "4", "4", "4", "4", "4", "4", "14" ] } ]
       },
       "description": "Call function that modifies an array through a storage pointer."
+    },
+    {
+      "constructorParams": [ 0, 0 ],
+      "method": "readAStorageString",
+      "params": [],
+      "result": {
+        "30": [ { "someString": "some string" } ]
+      },
+      "description": "Call function that has a string storage pointer."
+    },
+    {
+      "constructorParams": [ 0, 0 ],
+      "skip": true,
+      "method": "readAStorageLargeString",
+      "params": [],
+      "result": {
+        "35": [ { "someString": "some string that goes over the 31 byte threshold" } ]
+      },
+      "description": "Call function that has a long string storage pointer."
     }
   ]
 }

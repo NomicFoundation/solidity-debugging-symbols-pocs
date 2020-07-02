@@ -3,6 +3,7 @@ const { toBN, sha3, hexToBytes } = web3.utils;
 
 const uint256Size = 32;
 const uint256InHexSize = uint256Size * 2;
+const wordSize = BigInt(uint256Size);
 
 function readMemory(memory, pointer, size) {
     const value_array = [];
@@ -17,18 +18,20 @@ function padToWord(number) {
 }
 
 async function readStorage(readStorageSlot, pointer, size) {
-    if (size > 1000) {
-        console.warn("Beware, a large storage crawl was requested.");
+    if (size > 1000n * wordSize) {
+        throw new Error("A large storage crawl was requested.");
     }
 
+
+    const slotsToRead = size / wordSize + (size % wordSize > 0n ? 1n : 0n);
     const value_array = [];
-    for (let i = pointer; i < pointer + size; i++) {
+    for (let i = pointer; i < pointer + slotsToRead; i++) {
         const slot = "0x" + padToWord(i.toString(16));
         const word = await readStorageSlot(slot);
         const padded_word = padToWord(toBN(word));
         value_array.push(padded_word);
     }
-    return "0x" + value_array.join("");
+    return "0x" + value_array.join("").substring(0, Number(size * 2n));
 }
 
 function toCanonicalType(type) {
@@ -164,17 +167,31 @@ async function getStoragePointerAndLength(symbol, variablePointer, readStorageSl
             dataPointer: variablePointer,
             length: symbolLength
         };
-    } else if (symbol.encoding == "bytes") {
-        // We need to read the length in the machine memory.
-        return {
-            dataPointer: variablePointer + BigInt(uint256Size),
-            length: BigInt(readMemory(state.memory, variablePointer, BigInt(uint256Size)))
-        };
-    } else*/ if (symbol.encoding == "dynamic_array") {
+    } else*/ if (symbol.encoding == "bytes") {
         const lengthSlot = BigInt(variablePointer);
-        const numberOfElements = BigInt(await readStorage(readStorageSlot, lengthSlot, 1n));
-        const elementWords = BigInt(getSize({ type: symbol.base })) / BigInt(uint256Size);
-        const length = numberOfElements * elementWords;
+        const slotValue = BigInt(await readStorage(readStorageSlot, lengthSlot, wordSize));
+        // The bytes encoding in the storage uses the lowest order bit to encode two different representations:
+        // - inplace bytes for short byte buffers
+        // - derivation of the byte buffer pointer with the slot hash for arbitrarily large byte buffers
+        const isInplace = (slotValue & 0x01n) == 0n;
+        let length, stringPointer;
+        if (isInplace) {
+            length = (slotValue & 0xffn) >> 1n;
+            stringPointer = lengthSlot;
+        } else {
+            // The string buffer is elsewhere.
+            length = slotValue >> 1n;
+            stringPointer = BigInt(sha3(hexToBytes("0x" + padToWord(lengthSlot.toString(16)))));
+        }
+        return {
+            dataPointer: stringPointer,
+            length
+        };
+    } else if (symbol.encoding == "dynamic_array") {
+        const lengthSlot = BigInt(variablePointer);
+        const elementSize = BigInt(getSize({ type: symbol.base }));
+        const numberOfElements = BigInt(await readStorage(readStorageSlot, lengthSlot, elementSize));
+        const length = numberOfElements * elementSize;
         const arrayPointer = BigInt(sha3(hexToBytes("0x" + padToWord(lengthSlot.toString(16)))));
         return {
             dataPointer: arrayPointer,
