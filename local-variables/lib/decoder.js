@@ -205,6 +205,8 @@ async function getStoragePointerAndLength(symbol, variablePointer, readStorageSl
 function getSize(symbol) {
     if (toCanonicalType(symbol.type) == "uint256") {
         return uint256Size;
+    } else if (toCanonicalType(symbol.type) == "bool") {
+        return uint256Size;
     } else {
         throw new Error(`Unsupported type ${symbol.type}`);
     }

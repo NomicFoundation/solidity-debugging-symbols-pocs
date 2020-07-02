@@ -43,4 +43,17 @@ contract StorageTest {
         uint256[3] storage someNumbers = aStaticArray;
         return aStaticArray.length;
     }
+
+    struct SimpleStruct {
+        uint256 anId;
+        bool aFlag;
+        uint256 anAttribute;
+    }
+
+    SimpleStruct theStruct = SimpleStruct(1, true, 30);
+
+    function readAStoragePointerToStruct() public view returns (uint256) {
+        SimpleStruct storage someStruct = theStruct;
+        return someStruct.anAttribute;
+    }
 }

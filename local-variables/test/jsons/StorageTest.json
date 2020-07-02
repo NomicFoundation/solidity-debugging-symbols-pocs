@@ -64,6 +64,15 @@
         "44": [ { "someNumbers": [ "1", "2", "3" ] } ]
       },
       "description": "Observe a storage pointer to a static array of uint256."
+    },
+    {
+      "constructorParams": [ 0, 0 ],
+      "method": "readAStoragePointerToStruct",
+      "params": [],
+      "result": {
+        "57": [ { "someStruct": { "anId": "1", "aFlag": "true", "anAttribute": "30" } } ]
+      },
+      "description": "Observe a storage pointer to a simple struct."
     }
   ]
 }
