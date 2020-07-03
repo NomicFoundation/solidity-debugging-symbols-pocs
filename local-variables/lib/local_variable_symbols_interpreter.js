@@ -143,8 +143,9 @@ async function readVariableValues(trace, variables) {
     const calldata = (await trace.getCallDataAt(finalStep))[0].replace("0x", "");
     // FIXME: Here we assume, once again, that we are looking at a single call frame the entire time.
     const currentAddress = await trace.getCurrentCalledAddressAt(finalStep);
-    const storageChanges = await trace.getStorageAt(finalStep, currentAddress);
     const state = { stack, memory, calldata };
+    const storageChanges = await trace.getStorageAt(finalStep, currentAddress);
+    const parentBlock = (await web3.eth.getBlockNumber()) - 1;
     const readStorageSlot = (slot) => {
         // remix-lib stores slot and value pairs in a strange way: they are in a hashed slot => {slot, value} map.
         const key = Object.keys(storageChanges).find((hashedSlot) => {
@@ -153,7 +154,7 @@ async function readVariableValues(trace, variables) {
         if (key) {
             return storageChanges[key].value;
         } else {
-            return web3.eth.getStorageAt(currentAddress, slot);
+            return web3.eth.getStorageAt(currentAddress, slot, parentBlock);
         }
     };
     // console.log(`Stack in final step: ${util.inspect(stack, { depth: 5 })}`);

@@ -18,4 +18,14 @@ contract ForTest {
         }
         return array[0];
     }
+
+    uint256[5] theArray = [ 1, 2, 3, 4, 5 ];
+
+    function iterateAndModifyStorageArray(uint256 newNumber) public returns (uint256) {
+        uint256[5] storage someArray = theArray;
+        for (uint256 i = 0; i < someArray.length; i++) {
+            someArray[i] = newNumber;
+        }
+        return newNumber;
+    }
 }

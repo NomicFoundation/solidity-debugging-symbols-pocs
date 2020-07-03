@@ -42,6 +42,24 @@
 
       },
       "description": "Changing an array in memory"
+    },
+    {
+      "method": "iterateAndModifyStorageArray",
+      "params": [10],
+      "result": {
+        "25": [ { "newNumber": "10" } ],
+        "26": [ { "newNumber": "10", "someArray": [ "1", "2", "3", "4", "5" ] } ],
+        "27": [
+          { "newNumber": "10", "someArray": [ "1", "2", "3", "4", "5" ], "i": "0" },
+          { "newNumber": "10", "someArray": [ "10", "2", "3", "4", "5" ], "i": "1" },
+          { "newNumber": "10", "someArray": [ "10", "10", "3", "4", "5" ], "i": "2" },
+          { "newNumber": "10", "someArray": [ "10", "10", "10", "4", "5" ], "i": "3" },
+          { "newNumber": "10", "someArray": [ "10", "10", "10", "10", "5" ], "i": "4" }
+        ],
+        "29": [ { "newNumber": "10", "someArray": [ "10", "10", "10", "10", "10"] } ]
+
+      },
+      "description": "Loop modifying an array in storage"
     }
   ]
 }
