@@ -9,6 +9,7 @@ contract MemoryConstructorTest {
 
     constructor(string memory myStr, uint[3] memory array) public {
 
+        string storage theString = savedString;
         savedString = myStr;
         array[1] = 1337;
         emit End();

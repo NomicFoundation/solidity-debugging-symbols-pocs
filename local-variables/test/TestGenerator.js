@@ -47,9 +47,9 @@ testDefinitions.forEach( testDefinition => {
     });
 
     testDefinition.constructorTests && testDefinition.constructorTests.map(unitTest => {
-      if(unitTest.skip) return;
+      const testGenerate = unitTest.skip ? it.skip : it;
 
-      it(unitTest.description, async () => {
+      testGenerate(unitTest.description, async () => {
         const deployTx = Contract.deploy({ arguments: unitTest.params });
         const calldata = deployTx.encodeABI();
         let txHash;
@@ -68,9 +68,9 @@ testDefinitions.forEach( testDefinition => {
     });
 
     testDefinition.tests && testDefinition.tests.map(unitTest => {
-      if(unitTest.skip) return;
+      const testGenerate = unitTest.skip ? it.skip : it;
 
-      it(unitTest.description, async () => {
+      testGenerate(unitTest.description, async () => {
         const params = unitTest.constructorParams || [];
         const contract = await Contract.deploy({ arguments: params }).send();
         unitTest.before && await Promise.all(unitTest.before.map(

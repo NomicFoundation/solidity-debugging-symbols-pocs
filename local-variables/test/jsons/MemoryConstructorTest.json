@@ -4,8 +4,10 @@
      {
       "params": ["someString", [11,22,33]],
       "result": {
-        "13": [ { "myStr": "someString", "array": ["11", "22", "33"] } ],
-        "14": [ { "myStr": "someString", "array": ["11", "1337", "33"] } ]
+        "12": [ { "myStr": "someString", "array": ["11", "22", "33"] } ],
+        "13": [ { "myStr": "someString", "array": ["11", "22", "33"], "theString": "" } ],
+        "14": [ { "myStr": "someString", "array": ["11", "22", "33"], "theString": "someString" } ],
+        "15": [ { "myStr": "someString", "array": ["11", "1337", "33"], "theString": "someString" } ]
       },
       "description": "Constructor with memory pointers"
     }
