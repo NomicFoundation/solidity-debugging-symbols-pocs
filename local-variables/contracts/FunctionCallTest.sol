@@ -46,4 +46,24 @@ contract FunctionCallTest {
         }
         return true;
     }
+
+    uint256[3] theArray = [ 1, 2, 3 ];
+
+    function readModifiedArray() public returns (uint256[3] memory) {
+        uint256[3] storage array = getArray();
+        modifyArray(array);
+        return array;
+    }
+
+    function getArray() private view returns (uint256[3] storage) {
+        uint256[3] storage arrayReference = theArray;
+        return arrayReference;
+    }
+
+    function modifyArray(uint256[3] storage clobberedArray) private {
+        clobberedArray[0] = 324;
+        clobberedArray[1] = 453;
+        clobberedArray[2] = 753;
+    }
+
 }

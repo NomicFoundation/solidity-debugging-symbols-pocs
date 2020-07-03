@@ -152,7 +152,7 @@ async function readVariableValues(trace, variables) {
             return slot == '0x' + storageChanges[hashedSlot].key;
         });
         if (key) {
-            return storageChanges[key].value;
+            return "0x" + storageChanges[key].value;
         } else {
             return web3.eth.getStorageAt(currentAddress, slot, parentBlock);
         }

@@ -42,6 +42,19 @@
         "37":  [ { "calldataArr": ["77", "88", "99"], "memoryArry": ["77", "88", "5"], "areEqual": "false" } ]
       },
       "description": "Changing an array in another function"
+    },
+    {
+      "method": "readModifiedArray",
+      "params": [],
+      "result": {
+        "60":  [ { "arrayReference": [ "1", "2", "3" ] } ],
+        "54":  [ { "array": [ "1", "2", "3" ] } ],
+        "64":  [ { "clobberedArray": [ "1", "2", "3" ] } ],
+        "65":  [ { "clobberedArray": [ "324", "2", "3" ] } ],
+        "66":  [ { "clobberedArray": [ "324", "453", "3" ] } ],
+        "55":  [ { "array": [ "324", "453", "753" ] } ]
+      },
+      "description": "Modifying storage array references in different functions"
     }
   ]
 }
