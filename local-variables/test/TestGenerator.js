@@ -13,21 +13,6 @@ patch_web3(web3);
 
 const filenames = fs.readdirSync("test/jsons");
 let testDefinitions = filenames.map(file => require(`./jsons/${file}`));
-let hasOnly = false;
-const onlys = testDefinitions.map(td => {
-  const ans = {
-    contractName: td.contractName,
-    constructorTests: td.constructorTests? td.constructorTests.filter(t => t.only) : [],
-    tests:  td.tests? td.tests.filter(t => t.only): [],
-  };
-
-  hasOnly = hasOnly || ans.constructorTests.length > 0 || ans.tests.length > 0;
-  return ans;
-});
-
-if (hasOnly) {
-  testDefinitions = onlys;
-}
 
 testDefinitions.forEach( testDefinition => {
   contract(testDefinition.contractName, accounts => {
@@ -47,7 +32,10 @@ testDefinitions.forEach( testDefinition => {
     });
 
     testDefinition.constructorTests && testDefinition.constructorTests.map(unitTest => {
-      const testGenerate = unitTest.skip ? it.skip : it;
+      let testGenerate;
+      if (unitTest.skip) testGenerate = it.skip;
+      else if (unitTest.only) testGenerate = it.only;
+      else testGenerate = it;
 
       testGenerate(unitTest.description, async () => {
         const deployTx = Contract.deploy({ arguments: unitTest.params });
@@ -68,7 +56,10 @@ testDefinitions.forEach( testDefinition => {
     });
 
     testDefinition.tests && testDefinition.tests.map(unitTest => {
-      const testGenerate = unitTest.skip ? it.skip : it;
+      let testGenerate;
+      if (unitTest.skip) testGenerate = it.skip;
+      else if (unitTest.only) testGenerate = it.only;
+      else testGenerate = it;
 
       testGenerate(unitTest.description, async () => {
         const params = unitTest.constructorParams || [];
