@@ -38,6 +38,20 @@
         "32": [ { "over3":  "false", "index":  "100", "number": "100", "arr": ["200","200","200","0","0"] } ]
       },
       "description": "If block with memory arrays 2"
+    },
+    {
+      "method": "someRandomFunWithStorage",
+      "params": [],
+      "result": {
+        "38": [ {  } ],
+        "39": [ { "myVar1": "10" } ],
+        "41": [ { "myVar1": "10", "myVar2": "20" } ],
+        "42": [ { "myVar1": "10", "myVar2": "20", "someNumbers": [ "30", "40", "50" ] } ],
+        "44": [ { "myVar1": "30", "myVar2": "20", "someNumbers": [ "30", "40", "50" ], "localVar": "40" } ],
+        "46": [ { "myVar1": "10", "myVar2": "50" } ]
+
+      },
+      "description": "A storage pointer inside a scope block"
     }
   ]
 }

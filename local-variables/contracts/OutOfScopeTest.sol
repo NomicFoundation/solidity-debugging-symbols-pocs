@@ -31,4 +31,18 @@ contract OutOfScopeTest {
         }
         return arr[4];
     }
+
+    uint256[3] aNumberArray = [ 30, 40, 50 ];
+
+    function someRandomFunWithStorage() public view returns (uint256) {
+        uint myVar1 = 10;
+        uint myVar2 = 20;
+        {
+            uint[3] storage someNumbers = aNumberArray;
+            uint myVar1 = someNumbers[0];
+            uint localVar = someNumbers[1];
+            myVar2 = someNumbers[2];
+        }
+        return myVar2;
+    }
 }
