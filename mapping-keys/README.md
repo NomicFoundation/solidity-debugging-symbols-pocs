@@ -2,7 +2,7 @@
 
 This project works as a first draft implementation of debugging symbols in solidity for tracking keys used in mappings.
 
-## Debugging Symbol
+## Debugging Symbols
 
 The compiler will output a json object with the following metadata:
  * `storageLayout`: The variables extracted from the `--storage-layout` flag in solidity
@@ -67,9 +67,12 @@ To run the tests, run `npx buidler test` in this directory. Tests are generated 
   ]
 }
 ```
-Each test is a `JSON` object with `contractName` as the file and name on the contract located in `contracts`.
-An array of `constructorTests` and another array of `tests`. Each test will call a method and expect a `result`.
-The result must contain all they keys used in the transaction in the respective mappings. If a mapping is located inside a struct, the result will nest all the struct fields.
+Each test file is a `JSON` object with the following fields:
+- `contractName`: the file and name of the contract located in `contracts`.
+- `constructorTests`: An array of tests to be run after calling the constructor.
+- `tests`: An array of tests to be run after calling a specific method.
+Each test will call a method and expect a `result`.
+The result must contain all the keys used in the transaction in the respective mappings. If a mapping is located inside a struct, the result will nest all the struct fields.
 
 ```$json
 result: {
@@ -82,3 +85,7 @@ result: {
 ```
 
 Flags `only` and `skip` are available to cherrypick which tests to run.
+
+## Compiler source
+
+The source code for the compiler can be found [here](https://github.com/jcaracciolo/solidity/tree/debugging-symbols).
